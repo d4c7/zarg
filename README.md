@@ -35,10 +35,10 @@ To use Zig-Argueando in your project, you need to add the dependency to your `bu
 ```zig
 ...
 .dependencies = .{
-    .argueando = .{
-        .hash = "1220e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-        .url  = "https://github.com/d4c7/zig-argueando",
-    },
+        .argueando = .{
+            .hash = "1220a1ca1ef1eacb9cb1d52388754f3143dd516be98ee4e27137b8ee0f7e567e321c",
+            .url = "https://github.com/d4c7/zig-argueando/archive/refs/heads/main.tar.gz",
+        },
 },
 ... 
 ```
