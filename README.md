@@ -7,11 +7,7 @@ This file is part of zig-argueando project (https://github.com/d4c7/zig-argueand
 
 Zig-Argueando is a minimalist and efficient command-line parsing library written in Zig. It is designed to offer a convenient way of parsing command-line arguments in a simple yet powerful manner. With Zig-Argueando, you can easily set options, flags, and positional arguments for your command-line applications.
 
-## Origin
-
-Zig-Argueando was originally conceived as part of a [blog post](https://d4c7.github.io/zig-zagueando/posts/un-analizador-de-linea-de-comandos-en-zig-1/) at [Zig-Zagueando](https://d4c7.github.io/zig-zagueando/) intended to demonstrate the capabilities of Zig as a language for building command-line tools but, who knowns, it could resonate with some developers, leading to further enhancement and formalization of the original idea into a full standalone library. 
-
-The simplicity and expressiveness of Zig-Argueando exemplify the main principles of the Zig language. Our mission with this library is to provide a tool that is both easy to use and efficient, promoting best practices for command-line interface development in Zig.
+Latest version is 0.0.1
 
 ## Features
 
@@ -33,32 +29,40 @@ TODO: Documentation
 
 ## Install
 
-### Manually
-To use Zig-Argueando in your project, you need to add it to your `build.zig` file:
+
+To use Zig-Argueando in your project, you need to add the dependency to your `build.zig.zon`
 
 ```zig
-const Build = @import("std").build;
-
-pub fn build(b: *Build.Builder) void {
-    const target = b.standardTargetOptions(.{});
-    const optimize = b.standardOptimizeOption(.{});
-    
-    const exe = b.addExecutable(.{
-        .name = "my-app",
-        .root_source_file = .{ .path = "main.zig" },
-        .target = target,
-        .optimize = optimize,
-    });
-
-    var argueandoModule = b.addModule("argueando", .{ .source_file = FileSource{ .path = "lib/zig-argueando/argueando.zig" } });
-    exe.addModule("argueando", argueandoModule);
-}
+...
+.dependencies = .{
+    .argueando = .{
+        .hash = "1220e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        .url  = "https://github.com/d4c7/zig-argueando",
+    },
+},
+... 
 ```
-Replace `"path/to/zig-argueando/argueando.zig"` with the path to this library's source code on your system.
 
-### Using gyro
+and add the module to to your `build.zig` file:
 
-TO DO
+```zig
+...
+const exe = b.addExecutable(.{
+    .name = "your-executable",
+    .root_source_file = b.path("src/main.zig"),
+    .target = target,
+    .optimize = optimize,
+});
+
+const argueando = b.dependency("argueando", .{
+    .target = target,
+    .optimize = optimize,
+});
+
+exe.root_module.addImport("argueando", argueando.module("argueando"));
+...
+
+```
 
 ## Usage
 
@@ -99,7 +103,7 @@ if (s.helpRequested()) {
 }
 
 if (s.hasProblems()) {
-    try s.printProblems(std.io.getStdErr().writer(), .AllProblems);
+    try s.printProblems(std.io.getStdErr().writer(), .all_problems);
     return;
 }
 
@@ -109,13 +113,11 @@ std.debug.print("host: {s}\n", .{s.arg.host});
 
 ```
 
-TODO: View more examples in the `examples` folder.
+View more examples in the `examples` folder.
 
 ## Caution
 
-Please note that Zig-Argueando is a work in progress being developed and tested using Zig compiler version `0.11.0-dev.3971`, for more instability. If you are using a different Zig compiler version, we cannot guarantee that the library will work as expected. Before reporting any issues, please make sure you are using the recommended Zig compiler version. It is always a good practice to use the same compiler version that a library or application was developed with to avoid any compatibility issues. We are continuously working on providing support for newer versions of the Zig compiler. Please stay tuned for updates.
-
-IT IS NOT READY FOR PRODUCTION USE, the first stable version is targeted at the next stable version of Zig (i.e. version 0.11.0). 
+Please note that Zig-Argueando is a work in progress being developed and tested using Zig compiler version `0.13.0`. If you are using a different Zig compiler version, we cannot guarantee that the library will work as expected. Before reporting any issues, please make sure you are using the recommended Zig compiler version. It is always a good practice to use the same compiler version that a library or application was developed with to avoid any compatibility issues. We are continuously working on providing support for newer versions of the Zig compiler. Please stay tuned for updates.
 
 ## Contribution
 
@@ -123,4 +125,4 @@ We welcome all contributions! Please feel free to submit a PR or create an issue
 
 ## License
 
-Zig-Argueando is licensed under the EUPL-1.2 license. Please check the `LICENSES` folder for more details.
+Zig-Argueando is licensed under the EUPL-1.2 license and MIT. Please check the `LICENSES` folder for more details.

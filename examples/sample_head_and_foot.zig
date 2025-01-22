@@ -46,7 +46,7 @@ pub fn main() !void {
     }
 
     if (s.hasProblems()) {
-        try s.printProblems(std.io.getStdErr().writer(), .AllProblems);
+        try s.printProblems(std.io.getStdErr().writer(), .all_problems);
         return;
     }
 

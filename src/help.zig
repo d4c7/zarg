@@ -106,7 +106,7 @@ pub const ComptimeHelp = struct {
 
             var positional: ?Argueando.Positional = null;
 
-            inline for (self.params, 0..) |param, pidx| {
+            for (self.params, 0..) |param, pidx| {
                 _ = pidx;
                 switch (param.kind) {
                     .option => |opt| {
@@ -115,7 +115,7 @@ pub const ComptimeHelp = struct {
                         const both = short and long;
 
                         const optArg = switch (opt.format) {
-                            .void => "",
+                            .flag => "",
                             .single => |s| self.opts.optionArgSeparator ++ s.parser,
                             .multi => |m| self.opts.optionArgSeparator ++ m.parser,
                         };
@@ -123,7 +123,7 @@ pub const ComptimeHelp = struct {
                         const shortParam = if (short) ("-" ++ (opt.short ++ (if (long) ", " else (if (optArg.len > 0) optArg else " ")))) else "    ";
                         const longParam = if (long) ("--" ++ opt.long ++ optArg) else "";
 
-                        var usageParam: []const u8 = (if (both) "(" else "") ++
+                        const usageParam: []const u8 = (if (both) "(" else "") ++
                             (if (short) ("-" ++ opt.short) else "") ++
                             (if (short and long) "|" else "") ++
                             (if (long) ("--" ++ opt.long) else "") ++
@@ -132,7 +132,7 @@ pub const ComptimeHelp = struct {
                         res = res ++ comptimeLines("\n  {s: <" ++ maxOptSize ++ "} {s}", .{shortParam ++ longParam}, .{""}, param.help);
 
                         switch (opt.format) {
-                            .void => {
+                            .flag => {
                                 usage = usage ++ " [" ++ usageParam ++ "]";
                             },
                             .single => |p| {
@@ -166,15 +166,15 @@ pub const ComptimeHelp = struct {
             }
 
             var first = true;
-            inline for (self.parsers) |parser| {
+            for (self.parsers) |parser| {
                 const used = e: {
-                    inline for (self.params) |param| {
+                    for (self.params) |param| {
                         const strType = switch (param.kind) {
                             .option => |o| o.format,
                             .positional => |p| p.format,
                         };
                         switch (strType) {
-                            .void => {},
+                            .flag => {},
                             .single => |s| if (std.mem.eql(u8, s.parser, parser.name)) break :e true,
                             .multi => |m| if (std.mem.eql(u8, m.parser, parser.name)) break :e true,
                         }
@@ -193,7 +193,7 @@ pub const ComptimeHelp = struct {
 
             if (positional) |a| {
                 switch (a.format) {
-                    .void => {},
+                    .flag => {},
                     .single => |s| {
                         if (s.default) |def| {
                             _ = def;
@@ -251,9 +251,9 @@ pub const ComptimeHelp = struct {
     }
 
     pub const PrintProblemMode = enum {
-        FirstProblem,
-        FirstAndCountProblem,
-        AllProblems,
+        first_problem,
+        first_and_count_problems,
+        all_problems,
     };
 
     fn printProblemsList(writer: anytype, problems: std.ArrayList(Argueando.Problem), exe: []const u8, mod: PrintProblemMode) !void {
@@ -265,11 +265,11 @@ pub const ComptimeHelp = struct {
         if (l == 0) {
             try writer.print("No problems found", .{});
         } else {
-            if (.AllProblems == mod) {
+            if (.all_problems == mod) {
                 try writer.print("\n * ", .{});
             }
             try printProblem(writer, problems.items[0]);
-            if (.AllProblems == mod) {
+            if (.all_problems == mod) {
                 for (problems.items[1..]) |p2| {
                     try writer.print("\n * ", .{});
                     try printProblem(writer, p2);
@@ -284,10 +284,10 @@ pub const ComptimeHelp = struct {
         const bestHelpFlag = comptime e: {
             var name: []const u8 = "";
 
-            inline for (clp.params) |param| {
+            for (clp.params) |param| {
                 switch (param.kind) {
                     .option => |opt| switch (opt.format) {
-                        .void => if (param.tag == Argueando.HelpParamTag) {
+                        .flag => if (param.tag == Argueando.HelpParamTag) {
                             if (opt.long.len + 2 > name.len) {
                                 name = "--" ++ opt.long;
                             }

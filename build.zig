@@ -11,7 +11,7 @@ pub fn build(b: *std.Build) void {
     const optimize = b.standardOptimizeOption(.{});
 
     const unit_tests = b.addTest(.{
-        .root_source_file = .{ .path = "argueando_test.zig" },
+        .root_source_file = b.path("src/argueando_test.zig"),
         .target = target,
         .optimize = optimize,
     });
@@ -21,7 +21,11 @@ pub fn build(b: *std.Build) void {
     const test_step = b.step("test", "Run unit tests");
     test_step.dependOn(&run_unit_tests.step);
 
-    var argueandoModule = b.addModule("argueando", .{ .source_file = FileSource{ .path = "argueando.zig" } });
+    const argueandoModule = b.addModule("argueando", .{
+        .root_source_file = b.path("src/argueando.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
 
     const examples_step = b.step("examples", "Build examples");
     for ([_][]const u8{
@@ -31,12 +35,12 @@ pub fn build(b: *std.Build) void {
     }) |exe_name| {
         const exe = b.addExecutable(.{
             .name = exe_name,
-            .root_source_file = .{ .path = b.fmt("examples/{s}.zig", .{exe_name}) },
+            .root_source_file = b.path(b.fmt("examples/{s}.zig", .{exe_name})),
             .target = target,
             .optimize = optimize,
         });
-        const install_exe = b.addInstallArtifact(exe);
-        exe.addModule("argueando", argueandoModule);
+        const install_exe = b.addInstallArtifact(exe, .{});
+        exe.root_module.addImport("argueando", argueandoModule);
         examples_step.dependOn(&exe.step);
         examples_step.dependOn(&install_exe.step);
     }

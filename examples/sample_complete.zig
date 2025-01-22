@@ -20,7 +20,7 @@ pub fn myParseAllocFn(comptime parser: Parsers.Parser, allocator: anytype, recv:
     const T = parser.type;
     const result = try allocator.alloc(u8, str.len);
     @memcpy(result, str);
-    var rec = @as(*T, recv);
+    const rec = @as(*T, recv);
     rec.* = result;
 }
 
@@ -32,17 +32,17 @@ pub fn myParseFreeFn(comptime parser: Parsers.Parser, allocator: anytype, rec: a
 pub fn myParserFn(comptime parser: Parsers.Parser, allocator: anytype, recv: anytype, str: []const u8) !void {
     _ = allocator;
     const T = parser.type;
-    var rec = @as(*T, recv);
+    const rec = @as(*T, recv);
     const value = if (std.mem.eql(u8, "A", str)) "A" else if (std.mem.eql(u8, "B", str)) "B" else return MyTypeError.InvalidMyTypeValue;
     rec.* = value;
 }
 
 pub const ColorEnum = enum {
-    Red,
-    Green,
-    Blue,
-    Yellow,
-    Orange,
+    red,
+    green,
+    blue,
+    yellow,
+    orange,
 };
 
 pub fn main() !void {
@@ -67,7 +67,7 @@ pub fn main() !void {
 
             option(.{ .long = "alloc", .parser = "MY_TYPE_ALLOC", .default = "ONE", .help = "This is a custom type with allocation\nUse it with care." }),
             option(.{ .long = "alloc_opt", .parser = "MY_TYPE_ALLOC", .help = "This is a custom type with allocation but optional\nUse it with care." }),
-            option(.{ .long = "color", .short = "c", .parser = "COLOR", .default = @tagName(ColorEnum.Red), .help = "A color for your life." }),
+            option(.{ .long = "color", .short = "c", .parser = "COLOR", .default = @tagName(ColorEnum.red), .help = "A color for your life." }),
             option(.{ .long = "🧘", .parser = "MY_TYPE", .default = "A", .help = "This is a custom type optional argument\nUse it with care." }),
             option(.{ .long = "port", .short = "p", .parser = "TCP_PORT", .default = "1234", .help = "Server listen port." }),
             option(.{ .long = "size", .parser = "SIZE", .default = "3K", .help = "Size for something." }),
@@ -122,7 +122,7 @@ pub fn main() !void {
     }
 
     if (s.hasProblems()) {
-        try s.printProblems(std.io.getStdErr().writer(), .AllProblems);
+        try s.printProblems(std.io.getStdErr().writer(), .all_problems);
         return;
     }
 }

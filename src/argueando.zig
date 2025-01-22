@@ -42,7 +42,7 @@ pub const Param = struct {
     help: []const u8 = "",
     check: ?*const Checks.Fn = null,
 
-    pub fn fieldName(comptime self: Param) []const u8 {
+    pub fn fieldName(comptime self: Param) [:0]const u8 {
         comptime {
             switch (self.kind) {
                 .option => |opt| {
@@ -66,8 +66,8 @@ const Kind = union(KindTag) {
 
 pub const Option = struct {
     format: Format = .flag,
-    short: []const u8 = "",
-    long: []const u8 = "",
+    short: [:0]const u8 = "",
+    long: [:0]const u8 = "",
 
     pub inline fn matches(comptime self: Option, v: ctrl.ArgItem) bool {
         switch (v.t) {
@@ -114,8 +114,8 @@ pub const Problem = struct {
 };
 
 pub const DefaultMulti = struct {
-    short: []const u8 = "",
-    long: []const u8 = "",
+    short: [:0]const u8 = "",
+    long: [:0]const u8 = "",
     parser: []const u8 = "STR",
     defaults: ?[]const []const u8 = null,
     min: usize = 0,
@@ -142,8 +142,8 @@ pub fn multiOption(comptime opts: DefaultMulti) Param {
 }
 
 pub const DefaultSingle = struct {
-    short: []const u8 = "",
-    long: []const u8 = "",
+    short: [:0]const u8 = "",
+    long: [:0]const u8 = "",
     parser: []const u8 = "STR",
     default: ?[]const u8 = null,
     help: []const u8 = "",
@@ -167,8 +167,8 @@ pub fn option(comptime opts: DefaultSingle) Param {
 }
 
 pub const DefaultFlag = struct {
-    short: []const u8 = "",
-    long: []const u8 = "",
+    short: [:0]const u8 = "",
+    long: [:0]const u8 = "",
     help: []const u8 = "",
 };
 
@@ -185,8 +185,8 @@ pub fn flag(comptime opts: DefaultFlag) Param {
 }
 
 pub const DefaultHelpFlag = struct {
-    short: []const u8 = "",
-    long: []const u8 = "",
+    short: [:0]const u8 = "",
+    long: [:0]const u8 = "",
     help: []const u8 = ComptimeHelp.DefaultHelpFlagText,
 };
 
@@ -330,14 +330,14 @@ pub fn Args(comptime clp: CommandLineParser) type {
     }
 
     const T = @Type(.{ .Struct = .{
-        .layout = .Auto,
+        .layout = .auto,
         .fields = fields[0..],
         .decls = &.{},
         .is_tuple = false,
     } });
 
     const TStats = @Type(.{ .Struct = .{
-        .layout = .Auto,
+        .layout = .auto,
         .fields = stats_fields[0..],
         .decls = &.{},
         .is_tuple = false,
@@ -647,7 +647,7 @@ pub const ProcessMode = enum { //
 
 pub const ProblemMode = enum {
     ContinueOnProblem,
-    StopAtFirstProblem,
+    StopAtfirst_problem,
 };
 
 pub const Opts = struct {
@@ -804,7 +804,7 @@ pub const CommandLineParser = struct {
         var processOptions = true;
 
         out: while (argit.next()) |qarg| {
-            if (self.opts.problemMode == .StopAtFirstProblem and t.hasProblems()) {
+            if (self.opts.problemMode == .StopAtfirst_problem and t.hasProblems()) {
                 argit.rollback();
                 self.processOnlyFlags(&t, &argit);
                 return t;

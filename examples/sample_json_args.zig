@@ -13,11 +13,11 @@ const singlePositional = Argueando.singlePositional;
 const multiPositional = Argueando.multiPositional;
 
 pub const ColorEnum = enum {
-    Red,
-    Green,
-    Blue,
-    Yellow,
-    Orange,
+    red,
+    green,
+    blue,
+    yellow,
+    orange,
 };
 
 const E = enum {
@@ -96,7 +96,7 @@ pub fn main() !void {
     }
 
     if (s.hasProblems()) {
-        try s.printProblems(std.io.getStdErr().writer(), .AllProblems);
+        try s.printProblems(std.io.getStdErr().writer(), .all_problems);
         return;
     }
 

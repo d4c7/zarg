@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: MIT
 # This file is part of zig-argueando project (https://github.com/d4c7/zig-argueando)
 
-gyro.lock
-zig-cache
+.zig-cache
 zig-out
 .reuse

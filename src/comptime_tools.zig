@@ -177,7 +177,7 @@ test "hash" {
     comptime {
         var map = StringHashMap(usize, 5).init();
 
-        inline for (0..5) |i| {
+        for (0..5) |i| {
             const k = std.fmt.comptimePrint("{d}", .{i});
             try std.testing.expect(null == try map.put(k, i));
 
@@ -192,7 +192,7 @@ test "hash_ptr" {
     comptime {
         var map = StringHashMap(*usize, 5).init();
 
-        inline for (0..5) |i| {
+        for (0..5) |i| {
             const k = std.fmt.comptimePrint("{d}", .{i});
 
             var v: usize = i;

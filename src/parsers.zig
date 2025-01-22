@@ -31,7 +31,7 @@ pub const Parser = struct {
     }
 
     // TODO:optional or ptr allocator
-    
+
     pub fn parse(comptime self: Parser, allocator: anytype, value_receiver: anytype, value: []const u8) !void {
         try self.parseFn(self, allocator, value_receiver, value);
         errdefer self.free(self, value_receiver);
@@ -90,11 +90,10 @@ pub const List = [_]Parser{
     , .checkFn = Check.NonEmptyString },
 };
 
-
 fn basicParse(comptime parser: Parser, allocator: anytype, recv: anytype, str: []const u8) !void {
     _ = allocator;
     const T = parser.type;
-    var rec = @as(*T, recv);
+    const rec = @as(*T, recv);
     const value = switch (T) {
         bool => try parseBool(str),
         u16 => try std.fmt.parseInt(u16, str, 0),
@@ -107,7 +106,7 @@ fn basicParse(comptime parser: Parser, allocator: anytype, recv: anytype, str: [
     rec.* = value;
 }
 
-const BoolMap = std.ComptimeStringMap(bool, .{
+const BoolMap = std.StaticStringMap(bool).initComptime(.{
     .{ "true", true },
     .{ "false", false },
     .{ "yes", true },
@@ -130,7 +129,7 @@ fn enumParse(comptime parser: Parser, allocator: anytype, recv: anytype, str: []
     if (info != .Enum) {
         @compileError(std.parsermt.comptimePrint("Required enum, found {s}", .{@tagName(info)}));
     }
-    var rec = @as(*T, recv);
+    const rec = @as(*T, recv);
     inline for (info.Enum.fields) |field| {
         if (std.mem.eql(u8, field.name, str)) {
             const key = @as(T, @enumFromInt(field.value));
@@ -184,19 +183,19 @@ const JsonContext = struct {
         }
     }
 
-    pub fn analize(self: *JsonContext, comptime T: type) !void {
+    pub fn analyze(self: *JsonContext, comptime T: type) !void {
         switch (@typeInfo(T)) {
             .Struct => |i| {
                 if (try self.registerType(T)) {
                     inline for (i.fields) |j| {
-                        try self.analize(j.type);
+                        try self.analyze(j.type);
                     }
                 }
             },
-            .Vector => |i| try self.analize(i.child),
-            .Pointer => |i| try self.analize(i.child),
-            .Array => |i| try self.analize(i.child),
-            .Optional => |i| try self.analize(i.child),
+            .Vector => |i| try self.analyze(i.child),
+            .Pointer => |i| try self.analyze(i.child),
+            .Array => |i| try self.analyze(i.child),
+            .Optional => |i| try self.analyze(i.child),
             else => {},
         }
     }
@@ -328,7 +327,7 @@ pub fn jsonParser(comptime name: []const u8, comptime e: anytype, comptime help:
     const h = help orelse e: {
         var auto: []const u8 = "A JSON conforming to RFC 8259 with this syntax:\n";
         var ctx = JsonContext.init(); //TODO:rename to json schema
-        ctx.analize(e) catch @compileError("unable to analize type");
+        ctx.analyze(e) catch @compileError("unable to analyze type");
         const z = ctx.schemaText("", e) catch @compileError("unable to gen schema text");
         auto = auto ++ z;
         break :e auto;
@@ -338,7 +337,7 @@ pub fn jsonParser(comptime name: []const u8, comptime e: anytype, comptime help:
 
 fn jsonParse(comptime parser: Parser, allocator: anytype, recv: anytype, str: []const u8) !void {
     const T = parser.type;
-    var rec = @as(*T, recv);
+    const rec = @as(*T, recv);
     const j = try json.parseFromSlice(@TypeOf(rec.value), allocator, str, .{});
     rec.* = j;
 }
