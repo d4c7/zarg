@@ -640,20 +640,20 @@ pub fn Args(comptime clp: CommandLineParser) type {
 }
 
 pub const ProcessMode = enum { //
-    ProcessAllArgs,
-    ProcessUntilOnlyPositionals,
-    ProcessUntilFirstPositional,
+    process_all_args,
+    process_until_only_positionals,
+    process_until_first_positional,
 };
 
 pub const ProblemMode = enum {
-    ContinueOnProblem,
-    StopAtfirst_problem,
+    continue_on_problem,
+    stop_at_first_problem,
 };
 
 pub const Opts = struct {
     optionArgSeparator: []const u8 = "=",
-    processMode: ProcessMode = .ProcessAllArgs,
-    problemMode: ProblemMode = .ContinueOnProblem,
+    processMode: ProcessMode = .process_all_args,
+    problemMode: ProblemMode = .continue_on_problem,
     //argsParsingMode:ArgsParsingMode=.MixedOptionsAndPositionals,
     //optionArgsMode:OptionArgsMode=.SameOrSeparateToken,
     exe: ?[]const u8 = null,
@@ -760,7 +760,7 @@ pub const CommandLineParser = struct {
                     }
                 },
                 .value => {
-                    if (isOnlyPositionalsFromHereValue(qarg) or self.opts.processMode == .ProcessUntilOnlyPositionals) break;
+                    if (isOnlyPositionalsFromHereValue(qarg) or self.opts.processMode == .process_until_only_positionals) break;
                 },
                 else => {},
             }
@@ -804,7 +804,7 @@ pub const CommandLineParser = struct {
         var processOptions = true;
 
         out: while (argit.next()) |qarg| {
-            if (self.opts.problemMode == .StopAtfirst_problem and t.hasProblems()) {
+            if (self.opts.problemMode == .stop_at_first_problem and t.hasProblems()) {
                 argit.rollback();
                 self.processOnlyFlags(&t, &argit);
                 return t;
@@ -827,7 +827,7 @@ pub const CommandLineParser = struct {
                         if (isOnlyPositionalsFromHereValue(qarg)) {
                             processOptions = false;
                             argit.state = .only_values;
-                            if (self.opts.processMode == .ProcessUntilOnlyPositionals) break :out;
+                            if (self.opts.processMode == .process_until_only_positionals) break :out;
                             continue;
                         }
                         //continue to process positionals, ojo no break!
@@ -841,7 +841,7 @@ pub const CommandLineParser = struct {
             if (t.processPositional(qarg) == .NotFound) {
                 t.report(error.UnexpectedPositional, "Unexpected positional argument", .{}, qarg);
             }
-            if (self.opts.processMode == .ProcessUntilFirstPositional) {
+            if (self.opts.processMode == .process_until_first_positional) {
                 break :out;
             }
         }

@@ -99,7 +99,7 @@ pub fn main() !void {
         \\
         \\More info: <https://d4c7.github.io/zig-zagueando/>.
         ,
-        .opts = .{ .processMode = .ProcessAllArgs, .problemMode = .ContinueOnProblem },
+        .opts = .{ .processMode = .process_all_args, .problemMode = .continue_on_problem },
     });
 
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};

@@ -7,7 +7,7 @@ This file is part of zig-argueando project (https://github.com/d4c7/zig-argueand
 
 Zig-Argueando is a minimalist and efficient command-line parsing library written in Zig. It is designed to offer a convenient way of parsing command-line arguments in a simple yet powerful manner. With Zig-Argueando, you can easily set options, flags, and positional arguments for your command-line applications.
 
-Latest version is 0.0.1
+Version 0.0.1 for zig 0.13.0
 
 ## Features
 
@@ -25,7 +25,11 @@ Latest version is 0.0.1
 - Lightweight with no dependencies
 - Leverages Zig's powerful compile-time feature as much as possible
 
-TODO: Documentation
+
+## Documentation
+
+[Un analizador de línea de comandos en Zig 🔧 (Parte I)](https://d4c7.github.io/zig-zagueando/posts/un-analizador-de-linea-de-comandos-en-zig-1/)
+[Un analizador de línea de comandos en Zig 🔧 (Parte II)](https://d4c7.github.io/zig-zagueando/posts/un-analizador-de-linea-de-comandos-en-zig-2/)
 
 ## Install
 
@@ -111,6 +115,35 @@ std.debug.print("dir: {s}\n", .{s.arg.positional});
 std.debug.print("port: {d}\n", .{s.arg.port});
 std.debug.print("host: {s}\n", .{s.arg.host});
 
+```
+
+Output sample
+
+```txt
+$ sample --help
+    \                                                |        
+   _ \     __|  _` |  |   |   _ \   _` |  __ \    _` |   _ \  
+  ___ \   |    (   |  |   |   __/  (   |  |   |  (   |  (   | 
+_/    _\ _|   \__, | \__,_| \___| \__,_| _|  _| \__,_| \___/  
+              |___/  
+Usage: sample [(-h|--help)] [--version] [(-v|--verbose)] [(-p|--port)=TCP_PORT] [(-H|--host)=TCP_HOST] [DIR]
+
+This command starts an HTTP Server and serves static content from directory DIR.
+
+  -h, --help             Shows this help.
+      --version          Output version information and exit.
+  -v, --verbose          Enable verbose output.
+  -p, --port=TCP_PORT    Listening Port.
+                         Default value: 1234
+  -H, --host=TCP_HOST    Host name
+                         Default value: localhost
+
+  TCP_PORT    TCP port value between 0 and 65535. Use port 0 to dynamically assign a port
+              Can use base prefix (0x,0o,0b). 
+  TCP_HOST    TCP host name or IP. 
+  DIR         Directory 
+
+More info: <https://d4c7.github.io/zig-zagueando/>.
 ```
 
 View more examples in the `examples` folder.
