@@ -60,7 +60,7 @@ const my_json =
     \\    "vals": {
     \\        "testing": 1,
     \\        "testing2": 2,
-    \\        "production": "Red"
+    \\        "production": "red"
     \\    },
     \\    "more": null,
     \\    "uptime": 9999

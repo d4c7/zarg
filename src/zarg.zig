@@ -447,7 +447,7 @@ pub fn Args(comptime clp: CommandLineParser) type {
             return str;
         }
 
-        pub const ProcessResult = enum { Applied, AppliedWithErrors, NotFound };
+        pub const ProcessResult = enum { applied, applied_with_errors, not_found };
 
         fn processOption(t: *Args(clp), qarg: ctrl.ArgItem, argit: anytype) ProcessResult {
             var topts = &t.arg;
@@ -469,7 +469,7 @@ pub fn Args(comptime clp: CommandLineParser) type {
 
                             if (qarg.arglessReq and fmt != .flag) {
                                 t.report(error.ExpectedOptionArg, "Expected argument for option '{s}', cannot use a not last option with argument in a multi-option argument", .{optionName}, qarg);
-                                return .AppliedWithErrors;
+                                return .applied_with_errors;
                             }
 
                             if (fmt == .flag) {
@@ -510,25 +510,25 @@ pub fn Args(comptime clp: CommandLineParser) type {
 
                                 const qvalue = argit.next() orelse {
                                     t.report(error.ExpectedOptionArg, "Expected an option argument of type {s} for option '{s}'", .{ parserId, optionName }, qarg);
-                                    return .AppliedWithErrors;
+                                    return .applied_with_errors;
                                 };
 
                                 switch (qvalue.t) {
                                     .long, .short => {
                                         t.report(error.ExpectedOptionArg, "Expected option argument of type {s} for option '{s}' but found the option '{s}' instead", .{ parserId, optionName, qvalue.arg }, qarg);
                                         argit.rollback(); // so we can apply the unexpected option the next round and report more accurate problems
-                                        return .AppliedWithErrors;
+                                        return .applied_with_errors;
                                     },
                                     .value => {},
                                     .malformed_option => {
                                         t.report(error.MalformedOption, "Expected option argument of type {s} for option '{s}' but found the malformed option '{s}' instead", .{ parserId, optionName, qvalue.arg }, qarg);
-                                        return .AppliedWithErrors;
+                                        return .applied_with_errors;
                                     },
                                 }
 
                                 if (unexpected) {
                                     t.report(error.IgnoreOptionArg, "Ignore option argument '{s}'", .{qvalue.arg}, qvalue);
-                                    return .AppliedWithErrors;
+                                    return .applied_with_errors;
                                 }
 
                                 const parser = comptime Parsers.select(parserId, clp.parsers);
@@ -539,39 +539,38 @@ pub fn Args(comptime clp: CommandLineParser) type {
 
                                 parser.parse(t.allocator, &value_receiver, unquote(value)) catch |err| {
                                     t.report(err, "Unsupported value '{s}' of type {s} for option '{s}': {s}", .{ value, parserId, optionName, @errorName(err) }, qvalue);
-                                    return .AppliedWithErrors;
+                                    return .applied_with_errors;
                                 };
-                                //errdefer parser.free(t.allocator, value_receiver);
 
-                                //if (param.check) |chk| {
-                                //    chk(value_receiver) catch |err| {
-                                //        t.report(err, "Unsupported value '{s}' of type {s} for option '{s}': {s}", .{ value, parserId, optionName, @errorName(err) }, qvalue);
-                                //        parser.free(t.allocator, value_receiver);
-                                //        return .applied_with_errors;
-                                //    };
-                                //}
+                                if (param.check) |chk| {
+                                    chk(value_receiver) catch |err| {
+                                        t.report(err, "Unsupported value '{s}' of type {s} for option '{s}': {s}", .{ value, parserId, optionName, @errorName(err) }, qvalue);
+                                        parser.free(t.allocator, value_receiver);
+                                        return .applied_with_errors;
+                                    };
+                                }
 
                                 if (fmt == .multi) {
                                     // pzig bug?:
-                                    // const list = @field(topts, field_name);
-                                    // if (list.items.len < param.max)
+                                    //list = @field(topts, field_name);
+                                    //TODO: sec? append iif (list.items.len < fmt..max)
                                     @field(topts, field_name).append(value_receiver) catch |err| {
                                         t.report(err, "Unable to append value '{s}' of type {s} to option '{s}'", .{ value, parserId, optionName }, qvalue);
                                         parser.free(t.allocator, value_receiver);
-                                        return .AppliedWithErrors;
+                                        return .applied_with_errors;
                                     };
                                 } else {
                                     @field(topts, field_name) = value_receiver;
                                 }
                             }
-                            return .Applied;
+                            return .applied;
                         }
                     },
                     .positional => {},
                 }
             }
 
-            return .NotFound;
+            return .not_found;
         }
 
         fn processPositional(t: *Args(clp), qarg: ctrl.ArgItem) ProcessResult {
@@ -603,37 +602,37 @@ pub fn Args(comptime clp: CommandLineParser) type {
                             if (count == max_count + 1) {
                                 t.report(error.UnexpectedPositional, "Unexpected positional, more than {d} positionals found", .{max_count}, qarg);
                             }
-                            return .AppliedWithErrors;
+                            return .applied_with_errors;
                         }
 
                         var value_receiver: parser.type = undefined;
                         parser.parse(t.allocator, &value_receiver, unquote(value)) catch |err| {
                             t.report(err, "Unsupported value '{s}' of type {s} for positional arg: {s}", .{ value, parserId, @errorName(err) }, qarg);
-                            return .AppliedWithErrors;
+                            return .applied_with_errors;
                         };
 
-                        //if (param.check) |chk| {
-                        //   chk(value_receiver) catch |err| {
-                        //       parser.free(t.allocator, value_receiver);
-                        //       t.report(err, "Check failed for positional value '{s}' of type {s}: {s}", .{ value, parserId, @errorName(err) }, qarg);
-                        //       return .applied_with_errors;
-                        //   };
-                        //}
+                        if (param.check) |chk| {
+                            chk(value_receiver) catch |err| {
+                                parser.free(t.allocator, value_receiver);
+                                t.report(err, "Check failed for positional value '{s}' of type {s}: {s}", .{ value, parserId, @errorName(err) }, qarg);
+                                return .applied_with_errors;
+                            };
+                        }
 
                         if (pos.format == .multi) {
                             @field(topts, PositionalFieldName).append(value_receiver) catch |err| {
                                 parser.free(t.allocator, value_receiver);
                                 t.report(err, "Unable to append value '{s}' of type {s} to positionals: {s}", .{ value, parserId, @errorName(err) }, qarg);
-                                return .AppliedWithErrors;
+                                return .applied_with_errors;
                             };
                         } else {
                             @field(topts, PositionalFieldName) = value_receiver;
                         }
-                        return .Applied;
+                        return .applied;
                     },
                 }
             }
-            return .NotFound;
+            return .not_found;
         }
     };
 }
@@ -811,7 +810,7 @@ pub const CommandLineParser = struct {
             if (processOptions) {
                 switch (qarg.t) {
                     .long, .short => {
-                        if (t.processOption(qarg, &argit) == .NotFound) {
+                        if (t.processOption(qarg, &argit) == .not_found) {
                             t.report(error.UnrecognizedOption, "Unrecognized option '{s}'", .{qarg.arg}, qarg);
                             if (!qarg.arglessReq) {
                                 if (argit.knownOptionArgument()) |oa| {
@@ -837,7 +836,7 @@ pub const CommandLineParser = struct {
                     },
                 }
             }
-            if (t.processPositional(qarg) == .NotFound) {
+            if (t.processPositional(qarg) == .not_found) {
                 t.report(error.UnexpectedPositional, "Unexpected positional argument", .{}, qarg);
             }
             if (self.opts.processMode == .process_until_first_positional) {

@@ -316,8 +316,12 @@ pub const ComptimeHelp = struct {
                 const name2 = if (opt.short.len == 0) "" else (if (name1.len > 0) " or " else "") ++ "-" ++ opt.short;
                 return name1 ++ name2;
             },
-            .positional => {
-                return zarg.Positional;
+            .positional => |pos| {
+                switch (pos.format) {
+                    .single => |s| return std.fmt.comptimePrint("{s}", .{s.parser}),
+                    .multi => |m| return std.fmt.comptimePrint("{s}...", .{m.parser}),
+                    .flag => return "",
+                }
             },
         }
     }

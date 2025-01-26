@@ -39,39 +39,16 @@ WARNING: THIS IS A WORK IN PROGRESS, YOU SHOULD EXPECT BREAKING CHANGES AND BUGS
 ## Install
 
 
-To use zarg in your project, you need to add the dependency to your `build.zig.zon`
-
-You can use zig fetch, easy:
+To use zarg in your project, you need to add the dependency to your `build.zig.zon`:
 
 ```
 zig fetch --save git+https://github.com/d4c7/zarg
 ```
 
-Or add it manually modifying `build.zig.zon`
-
-```zig
-...
-.dependencies = .{
-        .zarg = .{
-            //Fix the hash if required
-            .hash = "122059930dfae7445d70d790fa20547aac978a2e2652d8c098879dc38c2820faecb8",
-            .url = "https://github.com/d4c7/zarg/archive/refs/heads/main.tar.gz",
-        },
-},
-... 
-```
-
-
 Then you could add the module to to your `build.zig` file:
 
 ```zig
 ...
-const exe = b.addExecutable(.{
-    .name = "sample",
-    .root_source_file = b.path("src/main.zig"),
-    .target = target,
-    .optimize = optimize,
-});
 
 const zarg = b.dependency("zarg", .{
     .target = target,
@@ -162,6 +139,12 @@ More info: <https://d4c7.github.io/zig-zagueando/>.
 ```
 
 View more examples in the [`examples`](examples) folder.
+
+You can build the samples using:
+
+```
+zig build examples
+```
 
 ## Caution
 
