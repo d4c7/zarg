@@ -21,6 +21,7 @@ pub fn main() !void {
         .params = &[_]zarg.Param{
             flagHelp(.{ .long = "help", .short = "h", .help = "Shows this help." }),
             multiPositional(.{ //
+                .name = "Directory",
                 .min = 1,
                 .max = 5,
                 .parser = "DIR",

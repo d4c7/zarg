@@ -105,7 +105,7 @@ pub const ComptimeHelp = struct {
             const maxTypeNameSize = std.fmt.comptimePrint("{d}", .{maxTypeNameSz + 3});
 
             var positional: ?zarg.Positional = null;
-
+            var positionalParam: ?zarg.Param = null;
             for (self.params, 0..) |param, pidx| {
                 _ = pidx;
                 switch (param.kind) {
@@ -144,6 +144,9 @@ pub const ComptimeHelp = struct {
                                 }
                             },
                             .multi => |m| {
+                                const helps = comptTimeRangeHelps(usageParam, m.min, m.max);
+                                res = res ++ std.fmt.comptimePrint("\n  {s: <" ++ maxOptSize ++ "} {s}", .{ "", helps.details });
+                                usage = usage ++ " " ++ helps.usage;
                                 if (m.defaults) |defs| {
                                     usage = usage ++ " [" ++ usageParam ++ "]";
                                     res = res ++ comptimeLines("\n  {s: <" ++ maxOptSize ++ "} {s}", .{""}, .{""}, "Default values: ");
@@ -151,9 +154,6 @@ pub const ComptimeHelp = struct {
                                         res = res ++ comptimeLines("\n  {s: <" ++ maxOptSize ++ "} {s}", .{""}, .{""}, " - " ++ if (def.len == 0) "\"\"" else def);
                                     }
                                 }
-                                const helps = comptTimeRangeHelps(usageParam, m.min, m.max);
-                                res = res ++ std.fmt.comptimePrint("\n  {s: <" ++ maxOptSize ++ "} {s}", .{ "", helps.details });
-                                usage = usage ++ " " ++ helps.usage;
                             },
                         }
 
@@ -161,10 +161,46 @@ pub const ComptimeHelp = struct {
                         //    usage = usage ++ "\n   ";//TOOD: until width auto adjust available
                         //}
                     },
-                    .positional => |p| positional = p,
+                    .positional => |p| {
+                        positional = p;
+                        positionalParam = param;
+                    },
                 }
             }
 
+            if (positional) |a| {
+                if (positionalParam) |x| {
+                    switch (a.format) {
+                        .flag => {},
+                        .single => |s| {
+                            res = res ++ comptimeLines("\n  {s: <" ++ maxOptSize ++ "} {s}", .{positionalname(a.name, s.parser)}, .{""}, x.help);
+
+                            if (s.default) |def| {
+                                usage = usage ++ " [" ++ positionalname(a.name, s.parser) ++ "]";
+                                res = res ++ comptimeLines("\n  {s: <" ++ maxOptSize ++ "} {s}", .{""}, .{""}, "Default value: " ++ if (def.len == 0) "\"\"" else def);
+                            } else {
+                                usage = usage ++ " <" ++ positionalname(a.name, s.parser) ++ ">";
+                            }
+                        },
+                        .multi => |m| {
+                            res = res ++ comptimeLines("\n  {s: <" ++ maxOptSize ++ "} {s}", .{positionalname(a.name, m.parser)}, .{""}, x.help);
+
+                            const helps = comptTimeRangeHelps("<" ++ positionalname(a.name, m.parser) ++ ">", m.min, m.max);
+                            usage = usage ++ " " ++ helps.usage;
+                            res = res ++ std.fmt.comptimePrint("\n  {s: <" ++ maxOptSize ++ "} {s}", .{ "", helps.details });
+                            if (m.defaults) |defs| {
+                                res = res ++ comptimeLines("\n  {s: <" ++ maxOptSize ++ "} {s}", .{""}, .{""}, "Default values: ");
+                                for (defs) |def| {
+                                    res = res ++ comptimeLines("\n  {s: <" ++ maxOptSize ++ "} {s}", .{""}, .{""}, " - " ++ if (def.len == 0) "\"\"" else def);
+                                }
+                            }
+                        },
+                    }
+                }
+            }
+
+            //types
+            res = res ++ std.fmt.comptimePrint("\n\n  Types:", .{});
             var first = true;
             for (self.parsers) |parser| {
                 const used = e: {
@@ -191,23 +227,7 @@ pub const ComptimeHelp = struct {
                 }
             }
 
-            if (positional) |a| {
-                switch (a.format) {
-                    .flag => {},
-                    .single => |s| {
-                        if (s.default) |def| {
-                            _ = def;
-                            usage = usage ++ " [" ++ s.parser ++ "]";
-                        } else {
-                            usage = usage ++ s.parser;
-                        }
-                    },
-                    .multi => |m| {
-                        const helps = comptTimeRangeHelps(m.parser, m.min, m.max);
-                        usage = usage ++ " " ++ helps.usage;
-                    },
-                }
-            }
+            //foot
 
             if (self.footer.len > 0) {
                 res = res ++ std.fmt.comptimePrint("\n\n{s}", .{self.footer});
@@ -215,6 +235,12 @@ pub const ComptimeHelp = struct {
             res = res ++ std.fmt.comptimePrint("\n", .{});
             return HelpStrings{ .usage = usage, .details = res };
         }
+    }
+
+    fn positionalname(name: []const u8, parser: []const u8) []const u8 {
+        if (name.len == 0)
+            return "positional" ++ ":" ++ parser;
+        return name ++ ":" ++ parser;
     }
 
     pub fn printUsage(comptime self: zarg.CommandLineParser, writer: anytype, exe: []const u8) !void {
@@ -317,10 +343,12 @@ pub const ComptimeHelp = struct {
                 return name1 ++ name2;
             },
             .positional => |pos| {
+                if (pos.name.len > 0)
+                    return pos.name;
                 switch (pos.format) {
                     .single => |s| return std.fmt.comptimePrint("{s}", .{s.parser}),
-                    .multi => |m| return std.fmt.comptimePrint("{s}...", .{m.parser}),
-                    .flag => return "",
+                    .multi => |m| return std.fmt.comptimePrint("{s}", .{m.parser}),
+                    .flag => unreachable,
                 }
             },
         }

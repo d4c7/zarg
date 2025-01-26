@@ -57,8 +57,15 @@ pub fn main() !void {
         .desc = "Sample Command Line Parser zarg",
         .parsers = &parsers,
         .params = &[_]zarg.Param{
-            singlePositional(.{ .parser = "DIR", .default = ".", .check = &Check.Dir(.{ .mode = .read_write }).f }),
-
+            multiPositional(.{ //
+                .name = "Directory",
+                .min = 1,
+                .max = 5,
+                .parser = "DIR",
+                .defaults = &[_][]const u8{ ".", ".." },
+                .check = Check.Dir(.{ .mode = .read_only }).f,
+                .help = "Directory path with read permission",
+            }),
             flagHelp(.{ .long = "help", .short = "h", .help = "Shows this help." }),
             flagHelp(.{ .short = "?", .help = "Shows this help too." }),
             flag(.{ .long = "verbose", .short = "v", .help = "Enable verbose output." }),
@@ -71,7 +78,7 @@ pub fn main() !void {
             option(.{ .long = "🧘", .parser = "MY_TYPE", .default = "A", .help = "This is a custom type optional argument\nUse it with care." }),
             option(.{ .long = "port", .short = "p", .parser = "TCP_PORT", .default = "1234", .help = "Server listen port." }),
             option(.{ .long = "size", .parser = "SIZE", .default = "3K", .help = "Size for something." }),
-
+            option(.{ .long = "size2", .parser = "SIZE", .default = "8K", .help = "Size 2 for something." }),
             multiOption(.{
                 .long = "header",
                 .short = "H",

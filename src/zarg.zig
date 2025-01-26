@@ -79,6 +79,7 @@ pub const Option = struct {
 };
 
 pub const Positional = struct {
+    name: [:0]const u8 = "",
     format: Format,
 };
 
@@ -205,13 +206,15 @@ pub fn flagHelp(comptime opts: DefaultHelpFlag) Param {
 pub const DefaultSinglePositional = struct {
     parser: []const u8 = "STR",
     default: ?[]const u8 = null,
-    help: []const u8 = "",
+    help: []const u8 = "Single positional", //TODO: to helps
     check: ?*const Checks.Fn = null,
+    name: [:0]const u8 = "positional", //TODO: to helps
 };
 
 pub fn singlePositional(comptime opts: DefaultSinglePositional) Param {
     return Param{
         .kind = .{ .positional = .{
+            .name = opts.name,
             .format = .{ .single = .{
                 .parser = opts.parser,
                 .default = opts.default,
@@ -228,13 +231,14 @@ pub const DefaultMultiPositional = struct {
     defaults: ?[]const []const u8 = null,
     min: usize = 0,
     max: usize = MaxArgs,
-    help: []const u8 = "",
+    help: []const u8 = "Multiple positionals", //TODO: to helps
     check: ?*const Checks.Fn = null,
+    name: [:0]const u8 = "positional", //TODO: to helps
 };
 
 pub fn multiPositional(comptime opts: DefaultMultiPositional) Param {
     return Param{
-        .kind = .{ .positional = .{ .format = .{ .multi = .{
+        .kind = .{ .positional = .{ .name = opts.name, .format = .{ .multi = .{
             .parser = opts.parser,
             .defaults = opts.defaults,
             .min = opts.min,

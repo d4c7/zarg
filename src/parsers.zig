@@ -79,7 +79,7 @@ pub const List = [_]Parser{
     \\File 
     , .checkFn = Check.NonEmptyString },
     .{ .name = "DIR", .type = []const u8, .help = 
-    \\Directory 
+    \\Directory path
     , .checkFn = Check.NonEmptyString },
 };
 
