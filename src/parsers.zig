@@ -34,7 +34,7 @@ pub const Parser = struct {
 
     pub fn parse(comptime self: Parser, allocator: anytype, value_receiver: anytype, value: []const u8) !void {
         try self.parseFn(self, allocator, value_receiver, value);
-        errdefer self.free(self, value_receiver);
+        errdefer self.free(allocator, value_receiver);
         if (self.checkFn) |chk| {
             try chk(value_receiver.*);
         }
@@ -67,14 +67,7 @@ pub const List = [_]Parser{
         \\Examples: 10K   is 10*1000
         \\          0xaKiB is 10*1024
     , .{@sizeOf(usize) * 8}) },
-    .{ .name = "TCP_PORT", .type = u16, .checkFn = struct {
-        fn f(v: anytype) !void {
-            const port = @as(u16, v);
-            if (port == 5) {
-                return error.Overflow;
-            }
-        }
-    }.f, .help = 
+    .{ .name = "TCP_PORT", .type = u16, .help = 
     \\TCP port value between 0 and 65535. Use port 0 to dynamically assign a port
     \\Can use base prefix (0x,0o,0b). 
     },
@@ -308,15 +301,13 @@ const JsonContext = struct {
                     },
 
                     else => {
-                        @compileLog(ptrInfo.size);
-                        @compileError("Unable to parse into ptr type '" ++ @typeName(T) ++ "'");
+                                               @compileError("Unable to parse into ptr type '" ++ @typeName(T) ++ "'");
                     },
                 }
             },
 
             else => {
-                @compileLog("--", @typeInfo(T));
-                @compileError("Unable to parse into type --  '" ++ @typeName(T) ++ "'");
+                            @compileError("Unable to parse into type --  '" ++ @typeName(T) ++ "'");
             },
         }
         unreachable;

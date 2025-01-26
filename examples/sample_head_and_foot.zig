@@ -19,11 +19,11 @@ pub fn main() !void {
 
     const clp = comptime Argueando.CommandLineParser.init(.{
         .header =
-        \\    \                                                |        
-        \\   _ \     __|  _` |  |   |   _ \   _` |  __ \    _` |   _ \  
-        \\  ___ \   |    (   |  |   |   __/  (   |  |   |  (   |  (   | 
-        \\_/    _\ _|   \__, | \__,_| \___| \__,_| _|  _| \__,_| \___/  
-        \\              |___/  
+        \\  ______ _ _ __ __ _ 
+        \\ |_  / _` | '__/ _` |
+        \\  / / (_| | | | (_| |
+        \\ /___\__,_|_|  \__, |
+        \\               |___/ 
         ,
         .params = &[_]Argueando.Param{
             flagHelp(.{ .long = "help", .short = "h", .help = "Shows this help." }),

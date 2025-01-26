@@ -234,13 +234,12 @@ pub const DefaultMultiPositional = struct {
 
 pub fn multiPositional(comptime opts: DefaultMultiPositional) Param {
     return Param{
-        .kind = .{ .positional = .{} },
-        .Card = .{ .multi = .{
+        .kind = .{ .positional = .{ .format = .{ .multi = .{
             .parser = opts.parser,
             .defaults = opts.defaults,
             .min = opts.min,
             .max = opts.max,
-        } },
+        } } } },
         .help = opts.help,
         .check = opts.check,
     };
@@ -281,7 +280,7 @@ pub fn Args(comptime clp: CommandLineParser) type {
                         if (parser.isComptimeFriendly()) {
                             var v: T = undefined;
                             parser.parse(null, &v, d) catch |err| {
-                                @compileError(std.fmt.comptimePrint("Unsupported default param '{s}': {}", .{ d, err }));
+                                @compileError(std.fmt.comptimePrint("Unsupported default param '{s}' of type {s} for option '{s}': {}", .{ d, p.parser, param.fieldName(), err }));
                             };
                             break :e v;
                         }
@@ -298,7 +297,7 @@ pub fn Args(comptime clp: CommandLineParser) type {
                                 // if (!parser.useAllocator()) {
                                 var v: T = undefined;
                                 parser.parse(null, &v, d) catch |err| {
-                                    @compileError(std.fmt.comptimePrint("Unsupported default param #{d} '{s}': {}", .{ idx, d, err }));
+                                    @compileError(std.fmt.comptimePrint("Unsupported default param #{d} '{s}' of type {s} for option '{s}': {}", .{ idx, d, m.parser, param.fieldName(), err }));
                                 };
                                 //  }
                             }
@@ -544,13 +543,13 @@ pub fn Args(comptime clp: CommandLineParser) type {
                                 };
                                 //errdefer parser.free(t.allocator, value_receiver);
 
-                                if (param.check) |chk| {
-                                    chk(value_receiver) catch |err| {
-                                        t.report(err, "Unsupported value '{s}' of type {s} for option '{s}': {s}", .{ value, parserId, optionName, @errorName(err) }, qvalue);
-                                        parser.free(t.allocator, value_receiver);
-                                        return .AppliedWithErrors;
-                                    };
-                                }
+                                //if (param.check) |chk| {
+                                //    chk(value_receiver) catch |err| {
+                                //        t.report(err, "Unsupported value '{s}' of type {s} for option '{s}': {s}", .{ value, parserId, optionName, @errorName(err) }, qvalue);
+                                //        parser.free(t.allocator, value_receiver);
+                                //        return .applied_with_errors;
+                                //    };
+                                //}
 
                                 if (fmt == .multi) {
                                     // pzig bug?:
@@ -613,13 +612,13 @@ pub fn Args(comptime clp: CommandLineParser) type {
                             return .AppliedWithErrors;
                         };
 
-                        if (param.check) |chk| {
-                            chk(value_receiver) catch |err| {
-                                parser.free(t.allocator, value_receiver);
-                                t.report(err, "Check failed for positional value '{s}' of type {s}: {s}", .{ value, parserId, @errorName(err) }, qarg);
-                                return .AppliedWithErrors;
-                            };
-                        }
+                        //if (param.check) |chk| {
+                        //   chk(value_receiver) catch |err| {
+                        //       parser.free(t.allocator, value_receiver);
+                        //       t.report(err, "Check failed for positional value '{s}' of type {s}: {s}", .{ value, parserId, @errorName(err) }, qarg);
+                        //       return .applied_with_errors;
+                        //   };
+                        //}
 
                         if (pos.format == .multi) {
                             @field(topts, PositionalFieldName).append(value_receiver) catch |err| {

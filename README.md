@@ -7,7 +7,11 @@ This file is part of zig-argueando project (https://github.com/d4c7/zig-argueand
 
 Zig-Argueando is a minimalist and efficient command-line parsing library written in Zig. It is designed to offer a convenient way of parsing command-line arguments in a simple yet powerful manner. With Zig-Argueando, you can easily set options, flags, and positional arguments for your command-line applications.
 
-Version 0.0.1 for zig 0.13.0
+Version 0.0.1 for zig 0.3.0
+
+```
+WARNING: THIS IS A WORK IN PROGRESS, YOU SHOULD EXPECT BREAKING CHANGES AND BUGS
+```
 
 ## Features
 
@@ -29,6 +33,7 @@ Version 0.0.1 for zig 0.13.0
 ## Documentation
 
 [Un analizador de línea de comandos en Zig 🔧 (Parte I)](https://d4c7.github.io/zig-zagueando/posts/un-analizador-de-linea-de-comandos-en-zig-1/)
+
 [Un analizador de línea de comandos en Zig 🔧 (Parte II)](https://d4c7.github.io/zig-zagueando/posts/un-analizador-de-linea-de-comandos-en-zig-2/)
 
 ## Install
