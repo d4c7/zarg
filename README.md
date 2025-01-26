@@ -62,7 +62,6 @@ Or add it manually modifying `build.zig.zon`
 ```
 
 
-
 Then you could add the module to to your `build.zig` file:
 
 ```zig
