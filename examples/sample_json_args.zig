@@ -1,16 +1,16 @@
 // SPDX-FileCopyrightText: 2023 David Castañon Belloso <d4c7@proton.me>
 // SPDX-License-Identifier: EUPL-1.2
-// This file is part of zig-argueando project (https://github.com/d4c7/zig-argueando)
+// This file is part of zarg project (https://github.com/d4c7/zarg)
 
 const std = @import("std");
-const Argueando = @import("argueando");
-const Parsers = Argueando.Parsers;
-const option = Argueando.option;
-const multiOption = Argueando.multiOption;
-const flag = Argueando.flag;
-const flagHelp = Argueando.flagHelp;
-const singlePositional = Argueando.singlePositional;
-const multiPositional = Argueando.multiPositional;
+const zarg = @import("zarg");
+const Parsers = zarg.Parsers;
+const option = zarg.option;
+const multiOption = zarg.multiOption;
+const flag = zarg.flag;
+const flagHelp = zarg.flagHelp;
+const singlePositional = zarg.singlePositional;
+const multiPositional = zarg.multiPositional;
 
 pub const ColorEnum = enum {
     red,
@@ -72,9 +72,9 @@ pub fn main() !void {
         Parsers.jsonParser("JSON-CONFIG", Config, null),
     };
 
-    const clp = Argueando.CommandLineParser.init(.{
+    const clp = zarg.CommandLineParser.init(.{
         .parsers = &parsers,
-        .params = &[_]Argueando.Param{
+        .params = &[_]zarg.Param{
             flagHelp(.{ .long = "help", .short = "h", .help = "Shows this help." }),
             option(.{ .long = "json", .parser = "JSON", .default = my_json, .help = "This is a dynamic json object type" }),
             option(.{ .long = "json_config", .parser = "JSON-CONFIG", .default = my_json, .help = "This is a json object type" }),

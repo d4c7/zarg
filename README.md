@@ -1,11 +1,11 @@
 <!--
 SPDX-FileCopyrightText: 2023 David Castañon Belloso <d4c7@proton.me>
 SPDX-License-Identifier: EUPL-1.2
-This file is part of zig-argueando project (https://github.com/d4c7/zig-argueando)
+This file is part of zarg project (https://github.com/d4c7/zarg)
 -->
-# Zig-Argueando
+# zarg
 
-Zig-Argueando is a minimalist and efficient command-line parsing library written in Zig. It is designed to offer a convenient way of parsing command-line arguments in a simple yet powerful manner. With Zig-Argueando, you can easily set options, flags, and positional arguments for your command-line applications.
+zarg (former zig-argueando) is a minimalist and efficient command-line parsing library written in Zig. It is designed to offer a convenient way of parsing command-line arguments in a simple yet powerful manner. With zarg, you can easily set options, flags, and positional arguments for your command-line applications.
 
 Version 0.0.1 for zig 0.3.0
 
@@ -39,36 +39,47 @@ WARNING: THIS IS A WORK IN PROGRESS, YOU SHOULD EXPECT BREAKING CHANGES AND BUGS
 ## Install
 
 
-To use Zig-Argueando in your project, you need to add the dependency to your `build.zig.zon`
+To use zarg in your project, you need to add the dependency to your `build.zig.zon`
+
+You can use zig fetch, easy:
+
+```
+zig fetch --save git+https://github.com/d4c7/zarg
+```
+
+Or add it manually modifying `build.zig.zon`
 
 ```zig
 ...
 .dependencies = .{
-        .argueando = .{
-            .hash = "1220a1ca1ef1eacb9cb1d52388754f3143dd516be98ee4e27137b8ee0f7e567e321c",
-            .url = "https://github.com/d4c7/zig-argueando/archive/refs/heads/main.tar.gz",
+        .zarg = .{
+            //Fix the hash if required
+            .hash = "12207a1fbe69406f3127d5b52b7bd859609d17e8cadeffa036f7477891000fddde1f",
+            .url = "https://github.com/d4c7/zarg/archive/refs/heads/main.tar.gz",
         },
 },
 ... 
 ```
 
-and add the module to to your `build.zig` file:
+
+
+Then you could add the module to to your `build.zig` file:
 
 ```zig
 ...
 const exe = b.addExecutable(.{
-    .name = "your-executable",
+    .name = "sample",
     .root_source_file = b.path("src/main.zig"),
     .target = target,
     .optimize = optimize,
 });
 
-const argueando = b.dependency("argueando", .{
+const zarg = b.dependency("zarg", .{
     .target = target,
     .optimize = optimize,
 });
 
-exe.root_module.addImport("argueando", argueando.module("argueando"));
+exe.root_module.addImport("zarg", zarg.module("zarg"));
 ...
 
 ```
@@ -78,14 +89,14 @@ exe.root_module.addImport("argueando", argueando.module("argueando"));
 Define a struct that defines the command-line arguments, help texts, headers and types you want to parse:
 
 ```zig
-    const clp = comptime Argueando.CommandLineParser.init(.{
+    const clp = comptime zarg.CommandLineParser.init(.{
         .header=
-        \\    \                                                |        
-        \\   _ \     __|  _` |  |   |   _ \   _` |  __ \    _` |   _ \  
-        \\  ___ \   |    (   |  |   |   __/  (   |  |   |  (   |  (   | 
-        \\_/    _\ _|   \__, | \__,_| \___| \__,_| _|  _| \__,_| \___/  
-        \\              |___/  
-        ,.params = &[_]Argueando.Param{
+        \\  ______ _ _ __ __ _ 
+        \\ |_  / _` | '__/ _` |
+        \\  / / (_| | | | (_| |
+        \\ /___\__,_|_|  \__, |
+        \\               |___/  
+        ,.params = &[_]zarg.Param{
             flagHelp(.{ .long = "help", .short = "h", .help = "Shows this help." }),
             flag(.{ .long = "version", .help = "Output version information and exit." }),
             flag(.{ .long = "verbose", .short = "v", .help = "Enable verbose output." }),
@@ -126,11 +137,11 @@ Output sample
 
 ```txt
 $ sample --help
-    \                                                |        
-   _ \     __|  _` |  |   |   _ \   _` |  __ \    _` |   _ \  
-  ___ \   |    (   |  |   |   __/  (   |  |   |  (   |  (   | 
-_/    _\ _|   \__, | \__,_| \___| \__,_| _|  _| \__,_| \___/  
-              |___/  
+ ______ _ _ __ __ _ 
+|_  / _` | '__/ _` |
+ / / (_| | | | (_| |
+/___\__,_|_|  \__, |
+              |___/ 
 Usage: sample [(-h|--help)] [--version] [(-v|--verbose)] [(-p|--port)=TCP_PORT] [(-H|--host)=TCP_HOST] [DIR]
 
 This command starts an HTTP Server and serves static content from directory DIR.
@@ -151,11 +162,11 @@ This command starts an HTTP Server and serves static content from directory DIR.
 More info: <https://d4c7.github.io/zig-zagueando/>.
 ```
 
-View more examples in the `examples` folder.
+View more examples in the [`examples`](examples) folder.
 
 ## Caution
 
-Please note that Zig-Argueando is a work in progress being developed and tested using Zig compiler version `0.13.0`. If you are using a different Zig compiler version, we cannot guarantee that the library will work as expected. Before reporting any issues, please make sure you are using the recommended Zig compiler version. It is always a good practice to use the same compiler version that a library or application was developed with to avoid any compatibility issues. We are continuously working on providing support for newer versions of the Zig compiler. Please stay tuned for updates.
+Please note that zarg is a work in progress being developed and tested. If you are using a different Zig compiler version, we cannot guarantee that the library will work as expected. Before reporting any issues, please make sure you are using the recommended Zig compiler version. It is always a good practice to use the same compiler version that a library or application was developed with to avoid any compatibility issues. We are continuously working on providing support for newer versions of the Zig compiler. Please stay tuned for updates.
 
 ## Contribution
 
@@ -163,4 +174,4 @@ We welcome all contributions! Please feel free to submit a PR or create an issue
 
 ## License
 
-Zig-Argueando is licensed under the EUPL-1.2 license and MIT. Please check the `LICENSES` folder for more details.
+zarg is licensed under the EUPL-1.2 license and MIT. Please check the [`LICENSES`](examples)  folder for more details.

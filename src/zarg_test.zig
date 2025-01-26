@@ -1,18 +1,18 @@
 // SPDX-FileCopyrightText: 2023 David Castañon Belloso <d4c7@proton.me>
 // SPDX-License-Identifier: EUPL-1.2
-// This file is part of zig-argueando project (https://github.com/d4c7/zig-argueando)
+// This file is part of zarg project (https://github.com/d4c7/zarg)
 
 const std = @import("std");
-const Argueando = @import("./argueando.zig");
+const zarg = @import("./zarg.zig");
 const builtin = std.builtin;
 const expectError = std.testing.expectError;
 
-const option = Argueando.option;
-const multiOption = Argueando.multiOption;
-const flag = Argueando.flag;
-const flagHelp = Argueando.flagHelp;
-const singlePositional = Argueando.singlePositional;
-const multiPositional = Argueando.multiPositional;
+const option = zarg.option;
+const multiOption = zarg.multiOption;
+const flag = zarg.flag;
+const flagHelp = zarg.flagHelp;
+const singlePositional = zarg.singlePositional;
+const multiPositional = zarg.multiPositional;
 
 fn expectEquiStructs(expected: anytype, actual: anytype) !void {
     switch (@typeInfo(@TypeOf(actual))) {
@@ -49,17 +49,17 @@ const TestIterator = struct {
     }
 };
 
-fn parse(comptime options: []const Argueando.Param, comptime args: anytype, comptime expected_args: anytype) !void {
+fn parse(comptime options: []const zarg.Param, comptime args: anytype, comptime expected_args: anytype) !void {
     try parseFull(options, args, expected_args, .{});
 }
 
 fn parseFull(
-    comptime options: []const Argueando.Param,
+    comptime options: []const zarg.Param,
     comptime args: anytype,
     comptime expected_args: anytype,
-    comptime cfg: Argueando.Opts,
+    comptime cfg: zarg.Opts,
 ) !void {
-    const parser = Argueando.CommandLineParser.init(.{ .params = options, .opts = cfg });
+    const parser = zarg.CommandLineParser.init(.{ .params = options, .opts = cfg });
     var it = TestIterator.init(args);
     const s = parser.parse(&it, std.testing.allocator);
     defer s.deinit();
@@ -72,7 +72,7 @@ fn parseFull(
 }
 
 test "invalid empty optional argument" {
-    try expectError(error.MalformedOption, parse(&[_]Argueando.Param{flag(.{
+    try expectError(error.MalformedOption, parse(&[_]zarg.Param{flag(.{
         .long = "flag",
     })}, .{ "exe", "--=" }, struct {
         flag: bool = false,
@@ -81,7 +81,7 @@ test "invalid empty optional argument" {
 
 test "end of optional arguments" {
     try parse(
-        &[_]Argueando.Param{ flag(.{
+        &[_]zarg.Param{ flag(.{
             .long = "flag",
         }), singlePositional(.{}) },
         .{ "exe", "--", "--flag" },
@@ -93,7 +93,7 @@ test "end of optional arguments" {
 }
 
 test "multi-options" {
-    try parse(&[_]Argueando.Param{
+    try parse(&[_]zarg.Param{
         flag(.{
             .short = "a",
         }),
@@ -107,7 +107,7 @@ test "multi-options" {
 }
 
 test "flag with arg cannot be multi option when it's not the lastone" {
-    try expectError(error.ExpectedOptionArg, parse(&[_]Argueando.Param{
+    try expectError(error.ExpectedOptionArg, parse(&[_]zarg.Param{
         option(.{
             .short = "a",
             .parser = "SIZE",
@@ -122,7 +122,7 @@ test "flag with arg cannot be multi option when it's not the lastone" {
 }
 
 test "flag with arg can be multi option when it's the lastone" {
-    try parse(&[_]Argueando.Param{
+    try parse(&[_]zarg.Param{
         option(.{
             .short = "a",
             .parser = "SIZE",
@@ -137,7 +137,7 @@ test "flag with arg can be multi option when it's the lastone" {
 }
 
 test "incomplete option name without collision is not allowed" {
-    try expectError(error.UnrecognizedOption, parse(&[_]Argueando.Param{flag(.{
+    try expectError(error.UnrecognizedOption, parse(&[_]zarg.Param{flag(.{
         .long = "flag",
     })}, .{ "exe", "--f" }, struct {
         flag: bool = true,
@@ -146,7 +146,7 @@ test "incomplete option name without collision is not allowed" {
 
 test "flag with argument after space is positional" {
     try parse(
-        &[_]Argueando.Param{ flag(.{
+        &[_]zarg.Param{ flag(.{
             .long = "flag",
         }), singlePositional(.{}) },
         .{ "exe", "--flag", "false" },
@@ -155,7 +155,7 @@ test "flag with argument after space is positional" {
 }
 
 test "flag with argument after equals is the option argument" {
-    try parse(&[_]Argueando.Param{option(.{ .long = "bool", .parser = "BOOL" })}, .{ "exe", "--bool=false" }, struct {
+    try parse(&[_]zarg.Param{option(.{ .long = "bool", .parser = "BOOL" })}, .{ "exe", "--bool=false" }, struct {
         bool: ?bool = false,
     }{});
 }
@@ -171,7 +171,7 @@ test "flag with valid bool arguments" {
     };
     inline for (map) |k| {
         try parse(
-            &[_]Argueando.Param{option(.{
+            &[_]zarg.Param{option(.{
                 .long = "flag",
                 .parser = "BOOL",
             })},
@@ -192,7 +192,7 @@ test "flag with invalid bool argument" {
     };
     inline for (map) |k| {
         try expectError(error.NotABooleanValue, parse(
-            &[_]Argueando.Param{option(.{
+            &[_]zarg.Param{option(.{
                 .long = "flag",
                 .parser = "BOOL",
             })},
@@ -203,7 +203,7 @@ test "flag with invalid bool argument" {
 }
 
 test "short option with arg" {
-    try parse(&[_]Argueando.Param{
+    try parse(&[_]zarg.Param{
         option(.{
             .short = "a",
             .parser = "SIZE",
@@ -214,7 +214,7 @@ test "short option with arg" {
 }
 
 test "short option with required arg" {
-    try expectError(error.ExpectedOptionArg, parse(&[_]Argueando.Param{option(.{
+    try expectError(error.ExpectedOptionArg, parse(&[_]zarg.Param{option(.{
         .short = "a",
         .parser = "SIZE",
     })}, .{ "exe", "-a" }, struct {
@@ -223,7 +223,7 @@ test "short option with required arg" {
 }
 
 test "use short or long option with arg using short" {
-    try parse(&[_]Argueando.Param{option(.{
+    try parse(&[_]zarg.Param{option(.{
         .long = "int",
         .short = "i",
         .parser = "SIZE",
@@ -233,7 +233,7 @@ test "use short or long option with arg using short" {
 }
 
 test "use short or long option with arg usign long" {
-    try parse(&[_]Argueando.Param{
+    try parse(&[_]zarg.Param{
         option(.{
             .long = "int",
             .short = "i",
@@ -245,7 +245,7 @@ test "use short or long option with arg usign long" {
 }
 
 test "required option value" {
-    try parse(&[_]Argueando.Param{
+    try parse(&[_]zarg.Param{
         option(.{ .long = "int", .short = "i", .parser = "SIZE", .default = "32" }),
     }, .{ "exe", "--int", "16" }, struct {
         int: usize = 16,
@@ -253,13 +253,13 @@ test "required option value" {
 }
 
 test "custom option-arg separator fail" {
-    try expectError(error.MalformedOption, parse(&[_]Argueando.Param{option(.{ .long = "int", .short = "i", .parser = "SIZE", .default = "32" })}, .{ "exe", "--int:=16" }, struct { int: usize = 16 }{}));
+    try expectError(error.MalformedOption, parse(&[_]zarg.Param{option(.{ .long = "int", .short = "i", .parser = "SIZE", .default = "32" })}, .{ "exe", "--int:=16" }, struct { int: usize = 16 }{}));
 }
 
 test "custom option-arg separator" {
-    try parseFull(&[_]Argueando.Param{option(.{ .long = "int", .short = "i", .parser = "SIZE", .default = "32" })}, .{ "exe", "--int:=16" }, struct { int: usize = 16 }{}, .{ .optionArgSeparator = ":=" });
+    try parseFull(&[_]zarg.Param{option(.{ .long = "int", .short = "i", .parser = "SIZE", .default = "32" })}, .{ "exe", "--int:=16" }, struct { int: usize = 16 }{}, .{ .optionArgSeparator = ":=" });
 }
 
 test "get error details" {
-    try parse(&[_]Argueando.Param{option(.{ .long = "int", .short = "i", .parser = "SIZE", .default = "32" })}, .{ "exe", "--int=16" }, struct { int: usize = 16 }{});
+    try parse(&[_]zarg.Param{option(.{ .long = "int", .short = "i", .parser = "SIZE", .default = "32" })}, .{ "exe", "--int=16" }, struct { int: usize = 16 }{});
 }

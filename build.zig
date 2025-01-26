@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: 2023 David Castañon Belloso <d4c7@proton.me>
 // SPDX-License-Identifier: EUPL-1.2
-// This file is part of zig-argueando project (https://github.com/d4c7/zig-argueando)
+// This file is part of zarg project (https://github.com/d4c7/zarg)
 
 const std = @import("std");
 const Module = std.build.Module;
@@ -11,7 +11,7 @@ pub fn build(b: *std.Build) void {
     const optimize = b.standardOptimizeOption(.{});
 
     const unit_tests = b.addTest(.{
-        .root_source_file = b.path("src/argueando_test.zig"),
+        .root_source_file = b.path("src/zarg_test.zig"),
         .target = target,
         .optimize = optimize,
     });
@@ -21,8 +21,8 @@ pub fn build(b: *std.Build) void {
     const test_step = b.step("test", "Run unit tests");
     test_step.dependOn(&run_unit_tests.step);
 
-    const argueandoModule = b.addModule("argueando", .{
-        .root_source_file = b.path("src/argueando.zig"),
+    const zargModule = b.addModule("zarg", .{
+        .root_source_file = b.path("src/zarg.zig"),
         .target = target,
         .optimize = optimize,
     });
@@ -40,7 +40,7 @@ pub fn build(b: *std.Build) void {
             .optimize = optimize,
         });
         const install_exe = b.addInstallArtifact(exe, .{});
-        exe.root_module.addImport("argueando", argueandoModule);
+        exe.root_module.addImport("zarg", zargModule);
         examples_step.dependOn(&exe.step);
         examples_step.dependOn(&install_exe.step);
     }

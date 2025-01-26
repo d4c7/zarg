@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: 2023 David Castañon Belloso <d4c7@proton.me>
 // SPDX-License-Identifier: EUPL-1.2
-// This file is part of zig-argueando project (https://github.com/d4c7/zig-argueando)
+// This file is part of zarg project (https://github.com/d4c7/zarg)
 
 const std = @import("std");
 

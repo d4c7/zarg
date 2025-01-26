@@ -1,18 +1,18 @@
 // SPDX-FileCopyrightText: 2023 David Castañon Belloso <d4c7@proton.me>
 // SPDX-License-Identifier: EUPL-1.2
-// This file is part of zig-argueando project (https://github.com/d4c7/zig-argueando)
+// This file is part of zarg project (https://github.com/d4c7/zarg)
 
 const std = @import("std");
-const Argueando = @import("argueando");
-const Parsers = Argueando.Parsers;
-const Check = Argueando.Checks;
+const zarg = @import("zarg");
+const Parsers = zarg.Parsers;
+const Check = zarg.Checks;
 const builtin = @import("builtin");
-const option = Argueando.option;
-const multiOption = Argueando.multiOption;
-const flag = Argueando.flag;
-const flagHelp = Argueando.flagHelp;
-const singlePositional = Argueando.singlePositional;
-const multiPositional = Argueando.multiPositional;
+const option = zarg.option;
+const multiOption = zarg.multiOption;
+const flag = zarg.flag;
+const flagHelp = zarg.flagHelp;
+const singlePositional = zarg.singlePositional;
+const multiPositional = zarg.multiPositional;
 
 pub const MyTypeError = error{InvalidMyTypeValue};
 
@@ -53,10 +53,10 @@ pub fn main() !void {
     };
 
     @setEvalBranchQuota(2000);
-    const clp = Argueando.CommandLineParser.init(.{
-        .desc = "Sample Command Line Parser Argueando",
+    const clp = zarg.CommandLineParser.init(.{
+        .desc = "Sample Command Line Parser zarg",
         .parsers = &parsers,
-        .params = &[_]Argueando.Param{
+        .params = &[_]zarg.Param{
             singlePositional(.{ .parser = "DIR", .default = ".", .check = &Check.Dir(.{ .mode = .read_write }).f }),
 
             flagHelp(.{ .long = "help", .short = "h", .help = "Shows this help." }),

@@ -1,23 +1,23 @@
 // SPDX-FileCopyrightText: 2023 David Castañon Belloso <d4c7@proton.me>
 // SPDX-License-Identifier: EUPL-1.2
-// This file is part of zig-argueando project (https://github.com/d4c7/zig-argueando)
+// This file is part of zarg project (https://github.com/d4c7/zarg)
 
 const std = @import("std");
-const Argueando = @import("argueando");
-const Checks = Argueando.Checks;
-const option = Argueando.option;
-const optionMulti = Argueando.optionMulti;
-const positionalsDef = Argueando.positionalsDef;
-const flag = Argueando.flag;
-const flagHelp = Argueando.flagHelp;
-const singlePositional = Argueando.singlePositional;
+const zarg = @import("zarg");
+const Checks = zarg.Checks;
+const option = zarg.option;
+const optionMulti = zarg.optionMulti;
+const positionalsDef = zarg.positionalsDef;
+const flag = zarg.flag;
+const flagHelp = zarg.flagHelp;
+const singlePositional = zarg.singlePositional;
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     const allocator = gpa.allocator();
     defer _ = gpa.deinit();
 
-    const clp = comptime Argueando.CommandLineParser.init(.{
+    const clp = comptime zarg.CommandLineParser.init(.{
         .header =
         \\  ______ _ _ __ __ _ 
         \\ |_  / _` | '__/ _` |
@@ -25,7 +25,7 @@ pub fn main() !void {
         \\ /___\__,_|_|  \__, |
         \\               |___/ 
         ,
-        .params = &[_]Argueando.Param{
+        .params = &[_]zarg.Param{
             flagHelp(.{ .long = "help", .short = "h", .help = "Shows this help." }),
             flag(.{ .long = "version", .help = "Output version information and exit." }),
             flag(.{ .long = "verbose", .short = "v", .help = "Enable verbose output." }),
