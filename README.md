@@ -54,7 +54,7 @@ Or add it manually modifying `build.zig.zon`
 .dependencies = .{
         .zarg = .{
             //Fix the hash if required
-            .hash = "12207a1fbe69406f3127d5b52b7bd859609d17e8cadeffa036f7477891000fddde1f",
+            .hash = "122059930dfae7445d70d790fa20547aac978a2e2652d8c098879dc38c2820faecb8",
             .url = "https://github.com/d4c7/zarg/archive/refs/heads/main.tar.gz",
         },
 },
