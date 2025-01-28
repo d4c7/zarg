@@ -41,22 +41,19 @@ WARNING: THIS IS A WORK IN PROGRESS, YOU SHOULD EXPECT BREAKING CHANGES AND BUGS
 
 To use zarg in your project, you need to add the dependency to your `build.zig.zon`:
 
-```
-zig fetch --save git+https://github.com/d4c7/zarg
+```bash
+$ zig fetch --save git+https://github.com/d4c7/zarg
 ```
 
 Then you could add the module to to your `build.zig` file:
 
 ```zig
-...
-
 const zarg = b.dependency("zarg", .{
     .target = target,
     .optimize = optimize,
 });
 
 exe.root_module.addImport("zarg", zarg.module("zarg"));
-...
 
 ```
 
@@ -145,6 +142,27 @@ You can build the samples using:
 ```
 zig build examples
 ```
+## Misc
+
+### Run tests 
+
+```
+zig test src/tests.zig
+```
+
+### Generate a coverture report
+
+Require `kcov` installed
+```
+zig build cover
+```
+
+View the report 
+```
+firefox zig-out/coverture/index.html
+```
+
+Note: Since the Zig compiler exclusively compiles functions that are explicitly called or referenced and comptime can lead to substantial portions of code not being included in the runtime the coverage results only reflect the extent to which the utilized functions are covered. 
 
 ## Caution
 
