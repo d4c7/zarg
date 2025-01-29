@@ -115,7 +115,7 @@ pub fn main() !void {
 
     var args = std.process.args();
 
-    var s = clp.parse(&args, allocator);
+    var s = clp.parse(&args, allocator, .{});
     defer s.deinit();
 
     if (s.helpRequested()) {

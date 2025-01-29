@@ -10,6 +10,7 @@ const heap = std.heap;
 const builtin = std.builtin;
 pub const Parsers = @import("parsers.zig");
 pub const Checks = @import("checks.zig");
+pub const Autcomplete = @import("autocomplete/autocomplete.zig");
 const ctrl = @import("argitem.zig");
 const ComptimeHelp = @import("help.zig").ComptimeHelp;
 
@@ -98,6 +99,7 @@ const Format = union(FormatTag) {
 pub const Single = struct {
     parser: []const u8 = "STR",
     default: ?[]const u8 = null,
+    must: bool = true,
 };
 
 pub const Multi = struct {
@@ -149,22 +151,19 @@ pub const DefaultSingle = struct {
     default: ?[]const u8 = null,
     help: []const u8 = "",
     check: ?*const Checks.Fn = null,
+    must: bool = true,
 };
 
 pub fn option(comptime opts: DefaultSingle) Param {
-    return Param{
-        .kind = .{ .option = .{
-            .short = opts.short,
-            .long = opts.long,
-            .format = .{ .single = .{
-                .parser = opts.parser,
-                .default = opts.default,
-            } },
+    return Param{ .kind = .{ .option = .{
+        .short = opts.short,
+        .long = opts.long,
+        .format = .{ .single = .{
+            .must = opts.must,
+            .parser = opts.parser,
+            .default = opts.default,
         } },
-
-        .help = opts.help,
-        .check = opts.check,
-    };
+    } }, .help = opts.help, .check = opts.check };
 }
 
 pub const DefaultFlag = struct {
@@ -209,21 +208,18 @@ pub const DefaultSinglePositional = struct {
     help: []const u8 = "Single positional", //TODO: to helps
     check: ?*const Checks.Fn = null,
     name: [:0]const u8 = "positional", //TODO: to helps
+    must: bool = true,
 };
 
 pub fn singlePositional(comptime opts: DefaultSinglePositional) Param {
-    return Param{
-        .kind = .{ .positional = .{
-            .name = opts.name,
-            .format = .{ .single = .{
-                .parser = opts.parser,
-                .default = opts.default,
-            } },
+    return Param{ .kind = .{ .positional = .{
+        .name = opts.name,
+        .format = .{ .single = .{
+            .must = opts.must,
+            .parser = opts.parser,
+            .default = opts.default,
         } },
-
-        .help = opts.help,
-        .check = opts.check,
-    };
+    } }, .help = opts.help, .check = opts.check };
 }
 
 pub const DefaultMultiPositional = struct {
@@ -237,16 +233,12 @@ pub const DefaultMultiPositional = struct {
 };
 
 pub fn multiPositional(comptime opts: DefaultMultiPositional) Param {
-    return Param{
-        .kind = .{ .positional = .{ .name = opts.name, .format = .{ .multi = .{
-            .parser = opts.parser,
-            .defaults = opts.defaults,
-            .min = opts.min,
-            .max = opts.max,
-        } } } },
-        .help = opts.help,
-        .check = opts.check,
-    };
+    return Param{ .kind = .{ .positional = .{ .name = opts.name, .format = .{ .multi = .{
+        .parser = opts.parser,
+        .defaults = opts.defaults,
+        .min = opts.min,
+        .max = opts.max,
+    } } } }, .help = opts.help, .check = opts.check };
 }
 
 pub const DefaultCommandLineParser = struct {
@@ -658,7 +650,11 @@ pub const Opts = struct {
     problemMode: ProblemMode = .continue_on_problem,
     //argsParsingMode:ArgsParsingMode=.MixedOptionsAndPositionals,
     //optionArgsMode:OptionArgsMode=.SameOrSeparateToken,
+};
+
+pub const RunOpts = struct { //
     exe: ?[]const u8 = null,
+    argOffset: usize = 0,
 };
 
 pub const CommandLineParser = struct {
@@ -744,7 +740,7 @@ pub const CommandLineParser = struct {
     pub fn parseArgs(comptime self: CommandLineParser, allocator: std.mem.Allocator) Args(self) {
         var it = try std.process.ArgIterator.initWithAllocator(allocator);
         defer it.deinit();
-        return self.parse(&it, allocator);
+        return self.parse(&it, allocator, .{});
     }
 
     inline fn isOnlyPositionalsFromHereValue(qarg: ctrl.ArgItem) bool {
@@ -769,7 +765,7 @@ pub const CommandLineParser = struct {
         }
     }
 
-    pub fn parse(comptime self: CommandLineParser, args: anytype, allocator: std.mem.Allocator) Args(self) {
+    pub fn parse(comptime self: CommandLineParser, args: anytype, allocator: std.mem.Allocator, runopts: RunOpts) Args(self) {
         var argit = ctrl.ArgsController(@TypeOf(args)){ .argIterator = args, .optionArgSeparator = self.opts.optionArgSeparator };
 
         var t = Args(self){
@@ -793,8 +789,9 @@ pub const CommandLineParser = struct {
             }
         }
 
-        if (self.opts.exe) |exe| {
+        if (runopts.exe) |exe| {
             t.exe = exe;
+            argit.num = runopts.argOffset;
         } else {
             t.exe = argit.rawNext() orelse {
                 t.addProblem(error.ExpectedExeArg, "Expected executable name but not found!", .{});
@@ -891,11 +888,11 @@ pub const CommandLineParser = struct {
                             }
                         }
                     }
-                    if (l == 0) {
+                    if (l == 0 and s.must) {
                         if (positional) {
-                            t.addProblem(error.ExpectedPositional, "Expected positional of type {s}", .{s.parser});
+                            t.addProblem(error.ExpectedPositional, "Expected {s}", .{comptime ComptimeHelp.argSpec(param)});
                         } else {
-                            t.addProblem(error.ExpectedOption, "Expected option {s} of type {s}", .{ comptime ComptimeHelp.argSpec(param), s.parser });
+                            t.addProblem(error.ExpectedOption, "Expected option {s}", .{comptime ComptimeHelp.argSpec(param)});
                         }
                     }
                 },

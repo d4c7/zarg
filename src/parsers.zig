@@ -56,6 +56,7 @@ pub const Parser = struct {
     }
 };
 
+//TODO: add parser multiuse, hint to help more fine output
 pub const List = [_]Parser{
     .{ .parseFn = jsonParse, .freeFn = jsonFree, .name = "JSON", .type = json.Parsed(json.Value), .help = "A JSON conforming to RFC 8259.\nhttps://datatracker.ietf.org/doc/html/rfc8259" }, //
     .{ .name = "STR", .type = []const u8, .help = "A non empty string value. UTF-8", .checkFn = Check.NonEmptyString },
@@ -142,7 +143,12 @@ pub fn enumParser(comptime name: []const u8, comptime e: anytype, comptime help:
         }
         break :e auto;
     };
-    return Parser{ .parseFn = enumParse, .name = name, .type = e, .help = h };
+    return Parser{ //
+        .parseFn = enumParse,
+        .name = name,
+        .type = e,
+        .help = h,
+    };
 }
 
 const JsonContext = struct {
