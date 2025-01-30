@@ -18,23 +18,20 @@ pub fn main() !void {
     defer _ = gpa.deinit();
 
     const clp = comptime zarg.CommandLineParser.init(.{
-        .header =
-        \\  ______ _ _ __ __ _ 
-        \\ |_  / _` | '__/ _` |
-        \\  / / (_| | | | (_| |
-        \\ /___\__,_|_|  \__, |
-        \\               |___/ 
-        ,
         .params = &[_]zarg.Param{
+            singlePositional(.{ //
+                .name = "src",
+                .parser = "DIR",
+                .check = Checks.Dir(.{ .mode = .read_only }).f,
+            }),
+            singlePositional(.{ //
+                .name = "dst",
+                .parser = "DIR",
+                .check = Checks.Dir(.{ .mode = .read_only }).f,
+            }),
+            flag(.{ .long = "flag", .short = "f", .help = "This is a flag." }),
             flagHelp(.{ .long = "help", .short = "h", .help = "Shows this help." }),
-            flag(.{ .long = "version", .help = "Output version information and exit." }),
-            flag(.{ .long = "verbose", .short = "v", .help = "Enable verbose output." }),
-            option(.{ .long = "port", .short = "p", .parser = "TCP_PORT", .default = "1234", .help = "Listening Port." }),
-            option(.{ .long = "host", .short = "H", .parser = "TCP_HOST", .default = "localhost", .help = "Host name" }),
-            singlePositional(.{ .parser = "DIR", .check = &Checks.Dir(.{ .mode = .read_only }).f }),
-        }, //
-        .desc = "This command starts an HTTP Server and serves static content from directory DIR.", //
-        .footer = "More info: <https://d4c7.github.io/zig-zagueando/>.",
+        },
     });
 
     var s = clp.parseArgs(allocator);
@@ -49,8 +46,6 @@ pub fn main() !void {
         try s.printProblems(std.io.getStdErr().writer(), .all_problems);
         return;
     }
-
-    std.debug.print("dir: {any}\n", .{s.arg.positional});
-    std.debug.print("port: {d}\n", .{s.arg.port});
-    std.debug.print("host: {s}\n", .{s.arg.host});
+    std.debug.print("src: {any}\n", .{s.arg.src});
+    std.debug.print("dst: {any}\n", .{s.arg.dst});
 }

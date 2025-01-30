@@ -44,7 +44,6 @@ pub fn main() !void {
             singlePositional(.{
                 .name = "string",
                 .parser = "STR",
-                .default = "abc",
                 .help = "Any string.",
             }),
             flagHelp(.{ //
@@ -89,5 +88,5 @@ pub fn main() !void {
         return;
     }
 
-    std.debug.print("{s}\n", .{s.arg.positional});
+    std.debug.print("{any}\n", .{s.arg.string});
 }

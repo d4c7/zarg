@@ -12,6 +12,7 @@ pub const ArgItem = struct {
     num: usize = 0,
     t: ArgItemType,
     argSrc: []const u8,
+    argSrcFrom: usize = 0,
     arglessReq: bool = false,
 };
 
@@ -115,7 +116,7 @@ pub fn ArgsController(comptime T: type) type {
                                     if ((!dbldash and i > 1) or (dbldash and i > 2)) {
                                         if (std.mem.startsWith(u8, arg[i..], self.optionArgSeparator)) {
                                             const n = i + self.optionArgSeparator.len;
-                                            self.nxt = ArgItem{ .arg = arg[n..], .num = self.num, .t = .value, .argSrc = raw };
+                                            self.nxt = ArgItem{ .arg = arg[n..], .num = self.num, .t = .value, .argSrc = raw, .argSrcFrom = n };
                                             arg = arg[0..i];
                                             //continue to check if long, short, or '--' arg
                                             break;
@@ -159,7 +160,7 @@ fn testGeneralCmdLine(input_cmd_line: []const u8, expected_args: []const ArgItem
     var ctrl = ArgsController(*std.process.ArgIteratorGeneral(.{})){ .argIterator = &it, .optionArgSeparator = "=" };
     for (expected_args) |expected_arg| {
         const arg = ctrl.next().?;
-        //std.debug.print("\n-> {any}\n", .{arg});
+        // std.debug.print("\n-> {any}\n", .{arg});
         try std.testing.expectEqualDeep(expected_arg, arg);
     }
     try std.testing.expect(ctrl.next() == null);
@@ -172,98 +173,128 @@ test "arg controller tokens" {
             .t = .short,
             .num = 1,
             .argSrc = "-0",
+            .argSrcFrom = 0,
         },
         .{
             .arg = "x",
             .t = .short,
             .num = 2,
             .argSrc = "-x=1",
+            .argSrcFrom = 0,
         },
         .{
             .arg = "1",
             .t = .value,
             .num = 2,
             .argSrc = "-x=1",
+            .argSrcFrom = 3,
         },
         .{
             .arg = "y",
             .t = .short,
             .num = 3,
             .argSrc = "-y=",
+            .argSrcFrom = 0,
         },
         .{
             .arg = "",
             .t = .value,
             .num = 3,
             .argSrc = "-y=",
+            .argSrcFrom = 3,
         },
-        .{ .arg = "a", .t = .short, .num = 4, .argSrc = "-abc=1", .arglessReq = true },
-        .{ .arg = "b", .t = .short, .num = 4, .argSrc = "-abc=1", .arglessReq = true },
+        .{
+            .arg = "a",
+            .t = .short,
+            .num = 4,
+            .argSrc = "-abc=1",
+            .arglessReq = true,
+            .argSrcFrom = 0,
+        },
+        .{
+            .arg = "b",
+            .t = .short,
+            .num = 4,
+            .argSrc = "-abc=1",
+            .arglessReq = true,
+            .argSrcFrom = 0,
+        },
         .{
             .arg = "c",
             .t = .short,
             .num = 4,
             .argSrc = "-abc=1",
+            .argSrcFrom = 0,
         },
         .{
             .arg = "1",
             .t = .value,
             .num = 4,
             .argSrc = "-abc=1",
+            .argSrcFrom = 5,
         },
         .{
             .arg = "de",
             .t = .long,
             .num = 5,
             .argSrc = "--de",
+            .argSrcFrom = 0,
         },
         .{
             .arg = "fg",
             .t = .long,
             .num = 6,
             .argSrc = "--fg=12",
+            .argSrcFrom = 0,
         },
         .{
             .arg = "12",
             .t = .value,
             .num = 6,
             .argSrc = "--fg=12",
+            .argSrcFrom = 5,
         },
         .{
             .arg = "--",
             .t = .value,
             .num = 7,
             .argSrc = "--",
+            .argSrcFrom = 0,
         },
         .{
             .arg = "-",
             .t = .value,
             .num = 8,
             .argSrc = "-",
+            .argSrcFrom = 0,
         },
         .{
             .arg = "-=",
             .t = .malformed_option,
             .num = 9,
             .argSrc = "-=",
+            .argSrcFrom = 0,
         },
         .{
             .arg = "--=",
             .t = .malformed_option,
             .num = 10,
             .argSrc = "--=",
+            .argSrcFrom = 0,
         },
         .{
             .arg = "-=1",
             .t = .malformed_option,
             .num = 11,
             .argSrc = "-=1",
+            .argSrcFrom = 0,
         },
         .{
             .arg = "--=2",
             .t = .malformed_option,
             .num = 12,
             .argSrc = "--=2",
+            .argSrcFrom = 0,
         },
         .{ .arg = "v", .t = .short, .num = 13, .argSrc = "-vp", .arglessReq = true },
         .{
@@ -271,36 +302,42 @@ test "arg controller tokens" {
             .t = .short,
             .num = 13,
             .argSrc = "-vp",
+            .argSrcFrom = 0,
         },
         .{
             .arg = "1234",
             .t = .value,
             .num = 14,
             .argSrc = "1234",
+            .argSrcFrom = 0,
         },
         .{
             .arg = "h",
             .t = .short,
             .num = 15,
             .argSrc = "-h='quoted'",
+            .argSrcFrom = 0,
         },
         .{
             .arg = "'quoted'",
             .t = .value,
             .num = 15,
             .argSrc = "-h='quoted'",
+            .argSrcFrom = 3,
         },
         .{
             .arg = "i",
             .t = .short,
             .num = 16,
             .argSrc = "-i='q=1'",
+            .argSrcFrom = 0,
         },
         .{
             .arg = "'q=1'",
             .t = .value,
             .num = 16,
             .argSrc = "-i='q=1'",
+            .argSrcFrom = 3,
         },
     });
 }

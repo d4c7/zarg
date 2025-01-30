@@ -94,7 +94,7 @@ fn basicParse(comptime parser: Parser, allocator: anytype, recv: anytype, str: [
         usize => try std.fmt.parseIntSizeSuffix(str, 0),
         isize => try std.fmt.parseInt(isize, str, 0),
         []const u8 => str,
-        else => @compileError(std.fmt.comptimePrint("unsupported type {}")),
+        else => @compileError(std.fmt.comptimePrint("unsupported type {any}", T)),
     };
 
     rec.* = value;

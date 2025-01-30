@@ -77,7 +77,7 @@ pub fn main() !void {
         return;
     }
 
-    if (s.arg.positional) |p| {
+    if (s.arg.command) |p| {
         switch (p) {
             .command1 => {
                 var cmd1 = command1_clp.parse(&args, allocator, .{ .exe = s.exe, .argOffset = 1 });

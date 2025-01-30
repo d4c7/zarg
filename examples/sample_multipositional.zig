@@ -11,6 +11,7 @@ const positionalsDef = zarg.positionalsDef;
 const flag = zarg.flag;
 const flagHelp = zarg.flagHelp;
 const multiPositional = zarg.multiPositional;
+const singlePositional = zarg.singlePositional;
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
@@ -20,12 +21,16 @@ pub fn main() !void {
     const clp = comptime zarg.CommandLineParser.init(.{
         .params = &[_]zarg.Param{
             flagHelp(.{ .long = "help", .short = "h", .help = "Shows this help." }),
+            singlePositional(.{ //
+                .name = "input",
+                .parser = "STR",
+                .check = Checks.Dir(.{ .mode = .read_only }).f,
+            }),
             multiPositional(.{ //
-                .name = "Directory",
+                .name = "dir",
                 .min = 1,
                 .max = 5,
                 .parser = "DIR",
-                .defaults = &[_][]const u8{ ".", ".." },
                 .check = Checks.Dir(.{ .mode = .read_only }).f,
             }),
         },
@@ -43,7 +48,7 @@ pub fn main() !void {
         try s.printProblems(std.io.getStdErr().writer(), .all_problems);
         return;
     }
-    for (s.arg.positional.items) |i| {
+    for (s.arg.dir.items) |i| {
         std.debug.print("readable dir: {s}\n", .{i});
     }
 }

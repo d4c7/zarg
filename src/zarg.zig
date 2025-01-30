@@ -13,8 +13,10 @@ pub const Checks = @import("checks.zig");
 pub const Autcomplete = @import("autocomplete/autocomplete.zig");
 const ctrl = @import("argitem.zig");
 const ComptimeHelp = @import("help.zig").ComptimeHelp;
+const StringHashMap = @import("comptime_tools.zig").StringHashMap;
 
-const PositionalFieldName = "positional";
+//const PositionalFieldName = "positional";
+pub const AutoCompleteCommand = "__autocomplete:";
 
 pub const CommandLineParserError = error{
     Internal,
@@ -49,7 +51,7 @@ pub const Param = struct {
                 .option => |opt| {
                     return if (opt.long.len > 0) opt.long else opt.short;
                 },
-                .positional => return PositionalFieldName,
+                .positional => |pos| return pos.name,
             }
         }
     }
@@ -204,7 +206,7 @@ pub fn flagHelp(comptime opts: DefaultHelpFlag) Param {
 
 pub const DefaultSinglePositional = struct {
     parser: []const u8 = "STR",
-    default: ?[]const u8 = null,
+    //default: ?[]const u8 = null,
     help: []const u8 = "Single positional", //TODO: to helps
     check: ?*const Checks.Fn = null,
     name: [:0]const u8 = "positional", //TODO: to helps
@@ -212,19 +214,27 @@ pub const DefaultSinglePositional = struct {
 };
 
 pub fn singlePositional(comptime opts: DefaultSinglePositional) Param {
-    return Param{ .kind = .{ .positional = .{
-        .name = opts.name,
-        .format = .{ .single = .{
-            .must = opts.must,
-            .parser = opts.parser,
-            .default = opts.default,
-        } },
-    } }, .help = opts.help, .check = opts.check };
+    return Param{
+        .kind = .{
+            .positional = .{
+                .name = opts.name,
+                .format = .{
+                    .single = .{
+                        .must = opts.must,
+                        .parser = opts.parser,
+                        //.default = opts.default,
+                    },
+                },
+            },
+        },
+        .help = opts.help,
+        .check = opts.check,
+    };
 }
 
 pub const DefaultMultiPositional = struct {
     parser: []const u8 = "STR",
-    defaults: ?[]const []const u8 = null,
+    //   defaults: ?[]const []const u8 = null,
     min: usize = 0,
     max: usize = MaxArgs,
     help: []const u8 = "Multiple positionals", //TODO: to helps
@@ -235,7 +245,6 @@ pub const DefaultMultiPositional = struct {
 pub fn multiPositional(comptime opts: DefaultMultiPositional) Param {
     return Param{ .kind = .{ .positional = .{ .name = opts.name, .format = .{ .multi = .{
         .parser = opts.parser,
-        .defaults = opts.defaults,
         .min = opts.min,
         .max = opts.max,
     } } } }, .help = opts.help, .check = opts.check };
@@ -341,6 +350,7 @@ pub fn Args(comptime clp: CommandLineParser) type {
     return struct {
         exe: []const u8 = "",
         arg: T = .{},
+        posIdx: usize = 0,
         stats: TStats = .{},
         allocator: std.mem.Allocator, //TODO:optional
         problems: std.ArrayList(Problem), // TODO:  fixed limited list and aflag allocator and print too many errors if more problems??
@@ -574,58 +584,64 @@ pub fn Args(comptime clp: CommandLineParser) type {
             var stats = &t.stats;
             const value = qarg.arg;
 
-            inline for (clp.params) |param| {
-                switch (param.kind) {
-                    .option => {},
-                    .positional => |pos| {
-                        @field(stats, PositionalFieldName).count += 1;
-                        const count = @field(stats, PositionalFieldName).count;
-
-                        const parserId = switch (pos.format) {
-                            .flag => unreachable,
-                            .single => |s| s.parser,
-                            .multi => |m| m.parser,
-                        };
-                        const parser = comptime Parsers.select(parserId, clp.parsers);
-
-                        const max_count = switch (pos.format) {
-                            .single => 1,
-                            .multi => |m| m.max,
-                            else => unreachable,
-                        };
-
-                        if (count > max_count) {
-                            if (count == max_count + 1) {
-                                t.report(error.UnexpectedPositional, "Unexpected positional, more than {d} positionals found", .{max_count}, qarg);
+            inline for (clp.params, 0..) |param, idx| {
+                if (idx >= t.posIdx) {
+                    switch (param.kind) {
+                        .option => {},
+                        .positional => |pos| {
+                            if (pos.format == .single) {
+                                t.posIdx = idx + 1;
                             }
-                            return .applied_with_errors;
-                        }
 
-                        var value_receiver: parser.type = undefined;
-                        parser.parse(t.allocator, &value_receiver, unquote(value)) catch |err| {
-                            t.report(err, "Unsupported value '{s}' of type {s} for positional arg: {s}", .{ value, parserId, @errorName(err) }, qarg);
-                            return .applied_with_errors;
-                        };
+                            @field(stats, pos.name).count += 1;
+                            const count = @field(stats, pos.name).count;
 
-                        if (param.check) |chk| {
-                            chk(value_receiver) catch |err| {
-                                parser.free(t.allocator, value_receiver);
-                                t.report(err, "Check failed for positional value '{s}' of type {s}: {s}", .{ value, parserId, @errorName(err) }, qarg);
+                            const parserId = switch (pos.format) {
+                                .flag => unreachable,
+                                .single => |s| s.parser,
+                                .multi => |m| m.parser,
+                            };
+                            const parser = comptime Parsers.select(parserId, clp.parsers);
+
+                            const max_count = switch (pos.format) {
+                                .single => 1,
+                                .multi => |m| m.max,
+                                else => unreachable,
+                            };
+
+                            if (count > max_count) {
+                                if (count == max_count + 1) {
+                                    t.report(error.UnexpectedPositional, "Unexpected positional, more than {d} positionals found", .{max_count}, qarg);
+                                }
+                                return .applied_with_errors;
+                            }
+
+                            var value_receiver: parser.type = undefined;
+                            parser.parse(t.allocator, &value_receiver, unquote(value)) catch |err| {
+                                t.report(err, "Unsupported value '{s}' of type {s} for positional arg: {s}", .{ value, parserId, @errorName(err) }, qarg);
                                 return .applied_with_errors;
                             };
-                        }
 
-                        if (pos.format == .multi) {
-                            @field(topts, PositionalFieldName).append(value_receiver) catch |err| {
-                                parser.free(t.allocator, value_receiver);
-                                t.report(err, "Unable to append value '{s}' of type {s} to positionals: {s}", .{ value, parserId, @errorName(err) }, qarg);
-                                return .applied_with_errors;
-                            };
-                        } else {
-                            @field(topts, PositionalFieldName) = value_receiver;
-                        }
-                        return .applied;
-                    },
+                            if (param.check) |chk| {
+                                chk(value_receiver) catch |err| {
+                                    parser.free(t.allocator, value_receiver);
+                                    t.report(err, "Check failed for positional value '{s}' of type {s}: {s}", .{ value, parserId, @errorName(err) }, qarg);
+                                    return .applied_with_errors;
+                                };
+                            }
+
+                            if (pos.format == .multi) {
+                                @field(topts, pos.name).append(value_receiver) catch |err| {
+                                    parser.free(t.allocator, value_receiver);
+                                    t.report(err, "Unable to append value '{s}' of type {s} to positionals: {s}", .{ value, parserId, @errorName(err) }, qarg);
+                                    return .applied_with_errors;
+                                };
+                            } else {
+                                @field(topts, pos.name) = value_receiver;
+                            }
+                            return .applied;
+                        },
+                    }
                 }
             }
             return .not_found;
@@ -643,12 +659,15 @@ pub const ProblemMode = enum {
     continue_on_problem,
     stop_at_first_problem,
 };
-
+pub const OptionsMode = enum {
+    options_in_any_position,
+    options_honors_positionals,
+};
 pub const Opts = struct {
     optionArgSeparator: []const u8 = "=",
     processMode: ProcessMode = .process_all_args,
     problemMode: ProblemMode = .continue_on_problem,
-    //argsParsingMode:ArgsParsingMode=.MixedOptionsAndPositionals,
+    optionsMode: OptionsMode = .options_in_any_position,
     //optionArgsMode:OptionArgsMode=.SameOrSeparateToken,
 };
 
@@ -680,37 +699,25 @@ pub const CommandLineParser = struct {
 
     fn comptimeCheck(comptime clp: CommandLineParser) void {
         comptime { //check parser
-            var positionalParam = false;
-            for (clp.params, 0..) |param1, idx1| {
+            var namesMap = StringHashMap(usize, clp.params.len).init();
+            var positionalMultiValueFound: bool = false;
+            for (clp.params) |param1| {
+                if (try namesMap.put(param1.fieldName(), 0)) {
+                    @compileError(std.fmt.comptimePrint("duplicated param name {s}", .{param1.fieldName()}));
+                }
+
                 switch (param1.kind) {
                     .option => |opt1| {
-                        if (std.mem.eql(u8, PositionalFieldName, opt1.long)) {
-                            @compileError(std.fmt.comptimePrint("Invalid option name '{s}', it's is reserved for positional arguments", .{PositionalFieldName}));
-                        }
-
                         if (opt1.short.len > 1) {
                             @compileError(std.fmt.comptimePrint("short param must be of len 1 but found {s}", .{opt1.short}));
                         }
-                        for (clp.params, 0..) |param2, idx2| {
-                            switch (param2.kind) {
-                                .option => |opt2| {
-                                    if (idx1 != idx2 and
-                                        ((opt1.short.len > 0 and std.mem.eql(u8, opt1.short, opt2.short)) or
-                                        (opt1.long.len > 0 and std.mem.eql(u8, opt1.long, opt2.long))))
-                                    {
-                                        @compileError(std.fmt.comptimePrint("duplicated param name {s} {s} <-> {s} {s}", .{ opt1.short, opt1.long, opt2.short, opt2.long }));
-                                    }
-                                },
-                                else => {},
-                            }
-                        }
                     },
                     .positional => {
-                        if (positionalParam) {
-                            @compileError(std.fmt.comptimePrint("already defined a positional param", .{}));
+                        if (positionalMultiValueFound) {
+                            @compileError("multipositional must be the last positional param");
                         }
 
-                        positionalParam = true;
+                        positionalMultiValueFound = param1.kind.positional.format == .multi;
                     },
                 }
 
@@ -722,7 +729,7 @@ pub const CommandLineParser = struct {
                 switch (knd) {
                     .flag => {
                         if (param1.kind == .positional) {
-                            @compileError(std.fmt.comptimePrint("Positional cannot be flag kind", .{}));
+                            @compileError("Positional cannot be flag kind");
                         }
                     },
                     .single => {},
@@ -799,10 +806,26 @@ pub const CommandLineParser = struct {
             };
             argit.num = 0;
         }
+        var autocompleteIndex: i16 = -1;
+        const autocompleteChar = 0;
+        if (argit.next()) |first| {
+            if (std.mem.startsWith(u8, first.arg, AutoCompleteCommand)) {
+                autocompleteIndex = 1;
+                //self.opts.problemMode = .continue_on_problem;
+            } else {
+                argit.rollback();
+            }
+        }
 
         var processOptions = true;
 
         out: while (argit.next()) |qarg| {
+            if (autocompleteIndex == qarg.num) {
+                if (autocompleteChar >= qarg.argSrcFrom and autocompleteChar <= qarg.argSrcFrom + qarg.arg.len) {
+                    //autocomplete here
+                    _ = 1;
+                }
+            }
             if (self.opts.problemMode == .stop_at_first_problem and t.hasProblems()) {
                 argit.rollback();
                 self.processOnlyFlags(&t, &argit);
@@ -851,7 +874,6 @@ pub const CommandLineParser = struct {
     fn check(comptime self: CommandLineParser, t: *Args(self)) void {
         inline for (self.params) |param| {
             const name = comptime param.fieldName();
-            const positional = comptime std.mem.eql(u8, name, PositionalFieldName);
             const knd = switch (param.kind) {
                 .option => |opt| opt.format,
                 .positional => |pos| pos.format,
@@ -889,11 +911,7 @@ pub const CommandLineParser = struct {
                         }
                     }
                     if (l == 0 and s.must) {
-                        if (positional) {
-                            t.addProblem(error.ExpectedPositional, "Expected {s}", .{comptime ComptimeHelp.argSpec(param)});
-                        } else {
-                            t.addProblem(error.ExpectedOption, "Expected option {s}", .{comptime ComptimeHelp.argSpec(param)});
-                        }
+                        t.addProblem(error.ExpectedPositional, "Expected {s}", .{comptime ComptimeHelp.argSpec(param)});
                     }
                 },
                 .multi => |m| {
@@ -925,11 +943,7 @@ pub const CommandLineParser = struct {
                     //note max is already checked on processing
                     if (l < m.min) {
                         const r = comptime ComptimeHelp.range(m.min, m.max);
-                        if (positional) {
-                            t.addProblem(error.ExpectedPositional, "Expected {s} positional(s), but found {d}", .{ r, l });
-                        } else {
-                            t.addProblem(error.ExpectedOption, "Expected {s} {s} option(s), but found {d}", .{ r, comptime ComptimeHelp.argSpec(param), l });
-                        }
+                        t.addProblem(error.ExpectedOption, "Expected {s} {s}'s, but found {d}", .{ r, comptime ComptimeHelp.argSpec(param), l });
                     }
                 },
             }

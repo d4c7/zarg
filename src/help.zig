@@ -104,8 +104,6 @@ pub const ComptimeHelp = struct {
             const maxOptSize = std.fmt.comptimePrint("{d}", .{maxOptSz + maxTypeNameSz + 5});
             const maxTypeNameSize = std.fmt.comptimePrint("{d}", .{maxTypeNameSz + 3});
 
-            var positional: ?zarg.Positional = null;
-            var positionalParam: ?zarg.Param = null;
             for (self.params, 0..) |param, pidx| {
                 _ = pidx;
                 switch (param.kind) {
@@ -161,41 +159,34 @@ pub const ComptimeHelp = struct {
                         //    usage = usage ++ "\n   ";//TOOD: until width auto adjust available
                         //}
                     },
-                    .positional => |p| {
-                        positional = p;
-                        positionalParam = param;
-                    },
-                }
-            }
+                    .positional => |a| {
+                        switch (a.format) {
+                            .flag => {},
+                            .single => |s| {
+                                res = res ++ comptimeLines("\n  {s: <" ++ maxOptSize ++ "} {s}", .{positionalname(a.name, s.parser)}, .{""}, param.help);
 
-            if (positional) |a| {
-                if (positionalParam) |x| {
-                    switch (a.format) {
-                        .flag => {},
-                        .single => |s| {
-                            res = res ++ comptimeLines("\n  {s: <" ++ maxOptSize ++ "} {s}", .{positionalname(a.name, s.parser)}, .{""}, x.help);
-
-                            if (s.default) |def| {
-                                usage = usage ++ " [" ++ positionalname(a.name, s.parser) ++ "]";
-                                res = res ++ comptimeLines("\n  {s: <" ++ maxOptSize ++ "} {s}", .{""}, .{""}, "Default value: " ++ if (def.len == 0) "\"\"" else def);
-                            } else {
-                                usage = usage ++ " <" ++ positionalname(a.name, s.parser) ++ ">";
-                            }
-                        },
-                        .multi => |m| {
-                            res = res ++ comptimeLines("\n  {s: <" ++ maxOptSize ++ "} {s}", .{positionalname(a.name, m.parser)}, .{""}, x.help);
-
-                            const helps = comptTimeRangeHelps("<" ++ positionalname(a.name, m.parser) ++ ">", m.min, m.max);
-                            usage = usage ++ " " ++ helps.usage;
-                            res = res ++ std.fmt.comptimePrint("\n  {s: <" ++ maxOptSize ++ "} {s}", .{ "", helps.details });
-                            if (m.defaults) |defs| {
-                                res = res ++ comptimeLines("\n  {s: <" ++ maxOptSize ++ "} {s}", .{""}, .{""}, "Default values: ");
-                                for (defs) |def| {
-                                    res = res ++ comptimeLines("\n  {s: <" ++ maxOptSize ++ "} {s}", .{""}, .{""}, " - " ++ if (def.len == 0) "\"\"" else def);
+                                if (s.default) |def| {
+                                    usage = usage ++ " [" ++ positionalname(a.name, s.parser) ++ "]";
+                                    res = res ++ comptimeLines("\n  {s: <" ++ maxOptSize ++ "} {s}", .{""}, .{""}, "Default value: " ++ if (def.len == 0) "\"\"" else def);
+                                } else {
+                                    usage = usage ++ " <" ++ positionalname(a.name, s.parser) ++ ">";
                                 }
-                            }
-                        },
-                    }
+                            },
+                            .multi => |m| {
+                                res = res ++ comptimeLines("\n  {s: <" ++ maxOptSize ++ "} {s}", .{positionalname(a.name, m.parser)}, .{""}, param.help);
+
+                                const helps = comptTimeRangeHelps("<" ++ positionalname(a.name, m.parser) ++ ">", m.min, m.max);
+                                usage = usage ++ " " ++ helps.usage;
+                                res = res ++ std.fmt.comptimePrint("\n  {s: <" ++ maxOptSize ++ "} {s}", .{ "", helps.details });
+                                if (m.defaults) |defs| {
+                                    res = res ++ comptimeLines("\n  {s: <" ++ maxOptSize ++ "} {s}", .{""}, .{""}, "Default values: ");
+                                    for (defs) |def| {
+                                        res = res ++ comptimeLines("\n  {s: <" ++ maxOptSize ++ "} {s}", .{""}, .{""}, " - " ++ if (def.len == 0) "\"\"" else def);
+                                    }
+                                }
+                            },
+                        }
+                    },
                 }
             }
 
@@ -203,27 +194,29 @@ pub const ComptimeHelp = struct {
             res = res ++ std.fmt.comptimePrint("\n\n  Types:", .{});
             var first = true;
             for (self.parsers) |parser| {
-                const used = e: {
-                    for (self.params) |param| {
-                        const strType = switch (param.kind) {
-                            .option => |o| o.format,
-                            .positional => |p| p.format,
-                        };
-                        switch (strType) {
-                            .flag => {},
-                            .single => |s| if (std.mem.eql(u8, s.parser, parser.name)) break :e true,
-                            .multi => |m| if (std.mem.eql(u8, m.parser, parser.name)) break :e true,
+                if (parser.help.len > 0) {
+                    const used = e: {
+                        for (self.params) |param| {
+                            const strType = switch (param.kind) {
+                                .option => |o| o.format,
+                                .positional => |p| p.format,
+                            };
+                            switch (strType) {
+                                .flag => {},
+                                .single => |s| if (std.mem.eql(u8, s.parser, parser.name)) break :e true,
+                                .multi => |m| if (std.mem.eql(u8, m.parser, parser.name)) break :e true,
+                            }
                         }
-                    }
-                    break :e false;
-                };
+                        break :e false;
+                    };
 
-                if (used) {
-                    if (first) {
-                        res = res ++ "\n";
-                        first = false;
+                    if (used) {
+                        if (first) {
+                            res = res ++ "\n";
+                            first = false;
+                        }
+                        res = res ++ comptimeLines("\n  {s: <" ++ maxTypeNameSize ++ "} {s}", .{parser.name}, .{""}, parser.help);
                     }
-                    res = res ++ comptimeLines("\n  {s: <" ++ maxTypeNameSize ++ "} {s}", .{parser.name}, .{""}, parser.help);
                 }
             }
 

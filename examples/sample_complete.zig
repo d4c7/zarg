@@ -62,7 +62,6 @@ pub fn main() !void {
                 .min = 1,
                 .max = 5,
                 .parser = "DIR",
-                .defaults = &[_][]const u8{ ".", ".." },
                 .check = Check.Dir(.{ .mode = .read_only }).f,
                 .help = "Directory path with read permission",
             }),

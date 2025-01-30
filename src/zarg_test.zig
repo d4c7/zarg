@@ -263,3 +263,11 @@ test "custom option-arg separator" {
 test "get error details" {
     try parse(&[_]zarg.Param{option(.{ .long = "int", .short = "i", .parser = "SIZE", .default = "32" })}, .{ "exe", "--int=16" }, struct { int: usize = 16 }{});
 }
+
+test "autocomplete option or positional" {
+    try parse(&[_]zarg.Param{
+        option(.{ .long = "int", .short = "i", .parser = "SIZE", .default = "32" }),
+    }, .{ zarg.AutoCompleteCommand ++ ":1:0", "exe", "--int", "16" }, struct {
+        int: usize = 16,
+    }{});
+}
