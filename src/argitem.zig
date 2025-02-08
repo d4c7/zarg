@@ -16,6 +16,14 @@ pub const ArgItem = struct {
     arglessReq: bool = false,
 };
 
+fn unquote(str: []const u8) []const u8 {
+    const l = str.len;
+    if (l > 1 and (str[0] == '"' or str[0] == '\'') and str[0] == str[l - 1]) {
+        return str[1 .. l - 1];
+    }
+    return str;
+}
+
 pub fn ArgsController(comptime T: type) type {
     return struct {
         last: ?ArgItem = null,
@@ -29,7 +37,7 @@ pub fn ArgsController(comptime T: type) type {
 
         const State = enum {
             normal,
-            multioption,
+            multi_short_option,
             only_values,
         };
 
@@ -49,7 +57,7 @@ pub fn ArgsController(comptime T: type) type {
         }
 
         fn shortOption(self: *Self, arg: []const u8, argSrc: []const u8) ?ArgItem {
-            self.last = ArgItem{ .arg = arg, .num = self.num, .t = .short, .argSrc = argSrc, .arglessReq = self.state == .multioption };
+            self.last = ArgItem{ .arg = arg, .num = self.num, .t = .short, .argSrc = argSrc, .arglessReq = self.state == .multi_short_option };
             return self.last;
         }
 
@@ -77,7 +85,7 @@ pub fn ArgsController(comptime T: type) type {
                 return self.last;
             }
 
-            if (self.state == .multioption) {
+            if (self.state == .multi_short_option) {
                 const arg = self.rest[0..1];
                 self.rest = self.rest[1..];
                 if (self.rest.len == 0) {
@@ -116,7 +124,7 @@ pub fn ArgsController(comptime T: type) type {
                                     if ((!dbldash and i > 1) or (dbldash and i > 2)) {
                                         if (std.mem.startsWith(u8, arg[i..], self.optionArgSeparator)) {
                                             const n = i + self.optionArgSeparator.len;
-                                            self.nxt = ArgItem{ .arg = arg[n..], .num = self.num, .t = .value, .argSrc = raw, .argSrcFrom = n };
+                                            self.nxt = ArgItem{ .arg = unquote(arg[n..]), .num = self.num, .t = .value, .argSrc = raw, .argSrcFrom = n };
                                             arg = arg[0..i];
                                             //continue to check if long, short, or '--' arg
                                             break;
@@ -132,16 +140,16 @@ pub fn ArgsController(comptime T: type) type {
                         //it's a long option
                         return self.longOption(arg[2..], raw);
                     } else {
-                        //can be multioption if len>2
+                        //can be multi-short-option if len>2
                         if (arg.len > 2) {
-                            self.state = .multioption;
+                            self.state = .multi_short_option;
                             self.rest = arg[2..];
                         }
                         //return fisrt (or full) part as short option
                         return self.shortOption(arg[1..2], raw);
                     }
                 }
-                return self.value(arg, raw);
+                return self.value(raw, raw);
             }
             self.last = null;
             return null;
@@ -167,7 +175,7 @@ fn testGeneralCmdLine(input_cmd_line: []const u8, expected_args: []const ArgItem
 }
 
 test "arg controller tokens" {
-    try testGeneralCmdLine("-0 -x=1 -y= -abc=1 --de --fg=12 -- -  -= --= -=1 --=2 -vp 1234 -h='quoted' -i='q=1'", &.{
+    try testGeneralCmdLine("-b = 2  -c =3 -0 -x=1 -y= -abc=1 --de --fg=12 -- -  -= --= -=1 --=2 -vp 1234 -h='quoted' -i='q=1'", &.{
         .{
             .arg = "0",
             .t = .short,

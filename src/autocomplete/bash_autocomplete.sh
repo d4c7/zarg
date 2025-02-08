@@ -2,36 +2,33 @@
 # SPDX-License-Identifier: EUPL-1.2
 # This file is part of zarg project (https://github.com/d4c7/zarg)
 
-#COMP_WORDS	Un array que contiene todas las palabras ingresadas en la línea de comandos.
-#COMP_CWORD	El índice en COMP_WORDS de la palabra que se está autocompletando.
-#COMP_LINE	La línea completa de comando ingresada por el usuario.
-#COMP_POINT	La posición actual del cursor dentro de COMP_LINE.
-#COMPREPLY	Un array donde se deben colocar las sugerencias de autocompletado.
-#COMP_KEY	Indica qué tecla activó la autocompletación (?, <Tab>, etc.).
-
-
-__sample_autocomplete_debug() {
+__%{TARGET}%_debug() {
     if [[ -n ${BASH_COMP_DEBUG_FILE:-} ]]; then
         echo "$*" >>"${BASH_COMP_DEBUG_FILE}"
     fi
 }
 
-_sample_autocomplete_completions() {
-    local cursor_pos_in_word
-    cursor_pos_in_word=$(( COMP_POINT - ${#COMP_LINE%%${COMP_WORDS[COMP_CWORD]}*} ))
-
-    __sample_autocomplete_debug
-    __sample_autocomplete_debug "========= starting completion logic =========="
-    __sample_autocomplete_debug "COMP_LINE  = ${COMP_LINE}"
-    __sample_autocomplete_debug "COMP_POINT = ${COMP_POINT}"
-    __sample_autocomplete_debug "${COMP_WORDS[@]} --complete ${COMP_POINT}"
-    __sample_autocomplete_debug "cursor_pos_in_word = ${cursor_pos_in_word}"
+_%{TARGET}%_completions() {
+    __%{TARGET}%_debug
+    __%{TARGET}%_debug "========================"
+    __%{TARGET}%_debug "COMP_LINE  = ${COMP_LINE}"
+    __%{TARGET}%_debug "COMP_POINT = ${COMP_POINT}"
     
-    #__sample_autocomplete_debug "result  is ${res}"
+    while IFS=$'\t' read -r col1 col2; do
+        COMPREPLY+=("$col1")
+    done < <(%{AUTOCOMPLETER}% suggest --cursor-pos=${COMP_POINT} -- "${COMP_LINE}")
 
+    if [[ ${#COMPREPLY[@]} -gt 0 ]]; then
+        first_item="${COMPREPLY[0]}"
+        if [[ "$first_item" == DIR:* ]]; then
+            COMPREPLY=( $(compgen -d -- "${first_item#DIR:}") )
+        elif [[ "$first_item" == FILE:* ]]; then
+            COMPREPLY=( $(compgen -f -- "${first_item#FILE:}") )
+        fi
+    fi
 
-    COMPREPLY+=(${COMP_LINE} --complete ${COMP_POINT})
+    __%{TARGET}%_debug "COMPREPLY    = ${COMPREPLY[@]}"
 
 }
 
-complete -F _sample_autocomplete_completions zig-out/bin/sample_autocomplete
+complete -o nospace  -F _%{TARGET}%_completions %{TARGET}%

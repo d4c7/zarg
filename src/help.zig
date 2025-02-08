@@ -356,4 +356,18 @@ pub const ComptimeHelp = struct {
         if (max == zarg.MaxArgs) return std.fmt.comptimePrint("at least {d}", .{max});
         return std.fmt.comptimePrint("between {d} and {d}", .{ min, max });
     }
+
+    pub fn printAutocomplete(comptime clp: zarg.CommandLineParser, s: zarg.Args(clp), writer: anytype) !void {
+        if (s.autocomplete) |a| {
+            const l = a.items.len;
+            if (l == 0) {
+                try writer.print("No suggestion found", .{});
+            } else {
+                for (a.items) |i| {
+                    //TODO:escape
+                    try writer.print("{s}{s}\t{s}\n", .{ i.value, i.completion, i.help });
+                }
+            }
+        }
+    }
 };

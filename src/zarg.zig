@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 David Castañon Belloso <d4c7@proton.me>
+// SPDX-FileCopyrightText: 2023-2025 David Castañon Belloso <d4c7@proton.me>
 // SPDX-License-Identifier: EUPL-1.2
 // This file is part of zarg project (https://github.com/d4c7/zarg)
 
@@ -10,13 +10,10 @@ const heap = std.heap;
 const builtin = std.builtin;
 pub const Parsers = @import("parsers.zig");
 pub const Checks = @import("checks.zig");
-pub const Autcomplete = @import("autocomplete/autocomplete.zig");
-const ctrl = @import("argitem.zig");
-const ComptimeHelp = @import("help.zig").ComptimeHelp;
+pub const ctrl = @import("argitem.zig");
+pub const ComptimeHelp = @import("help.zig").ComptimeHelp;
 const StringHashMap = @import("comptime_tools.zig").StringHashMap;
-
-//const PositionalFieldName = "positional";
-pub const AutoCompleteCommand = "__autocomplete:";
+pub const Autocomplete = @import("autocomplete/autocomplete.zig");
 
 pub const CommandLineParserError = error{
     Internal,
@@ -55,6 +52,23 @@ pub const Param = struct {
             }
         }
     }
+    pub fn parser(comptime self: Param, comptime clp: CommandLineParser) Parsers.Parser {
+        comptime {
+            //TODO:nonsense all this structures -- simplify!
+            const format = switch (self.kind) {
+                .option => |opt| opt.format,
+                .positional => |pos| pos.format,
+            };
+
+            const parserId = switch (format) {
+                .flag => return Parsers.ParserNOP, //...
+                .single => |single| single.parser,
+                .multi => |multi| multi.parser,
+            };
+
+            return Parsers.select(parserId, clp.parsers);
+        }
+    }
 };
 
 pub const KindTag = enum {
@@ -62,6 +76,7 @@ pub const KindTag = enum {
     positional,
 };
 
+//TODO:avoid union tag
 const Kind = union(KindTag) {
     option: Option,
     positional: Positional,
@@ -92,6 +107,7 @@ pub const FormatTag = enum {
     multi,
 };
 
+//TODO: avoid union tag
 const Format = union(FormatTag) {
     flag: void,
     single: Single,
@@ -263,6 +279,10 @@ pub const FieldStats = struct {
     count: usize = 0,
 };
 
+const ProcessingContext = struct { //
+    posIdx: usize = 0,
+};
+
 pub fn Args(comptime clp: CommandLineParser) type {
     var fields: [clp.params.len]builtin.Type.StructField = undefined;
     var stats_fields: [clp.params.len]builtin.Type.StructField = undefined;
@@ -350,7 +370,7 @@ pub fn Args(comptime clp: CommandLineParser) type {
     return struct {
         exe: []const u8 = "",
         arg: T = .{},
-        posIdx: usize = 0,
+
         stats: TStats = .{},
         allocator: std.mem.Allocator, //TODO:optional
         problems: std.ArrayList(Problem), // TODO:  fixed limited list and aflag allocator and print too many errors if more problems??
@@ -455,7 +475,7 @@ pub fn Args(comptime clp: CommandLineParser) type {
 
         pub const ProcessResult = enum { applied, applied_with_errors, not_found };
 
-        fn processOption(t: *Args(clp), qarg: ctrl.ArgItem, argit: anytype) ProcessResult {
+        fn processOption(t: *Args(clp), _: *ProcessingContext, qarg: ctrl.ArgItem, argit: anytype) ProcessResult {
             var topts = &t.arg;
             var stats = &t.stats;
 
@@ -579,18 +599,18 @@ pub fn Args(comptime clp: CommandLineParser) type {
             return .not_found;
         }
 
-        fn processPositional(t: *Args(clp), qarg: ctrl.ArgItem) ProcessResult {
+        fn processPositional(t: *Args(clp), ctx: *ProcessingContext, qarg: ctrl.ArgItem) ProcessResult {
             var topts = &t.arg;
             var stats = &t.stats;
             const value = qarg.arg;
 
             inline for (clp.params, 0..) |param, idx| {
-                if (idx >= t.posIdx) {
+                if (idx >= ctx.posIdx) {
                     switch (param.kind) {
                         .option => {},
                         .positional => |pos| {
                             if (pos.format == .single) {
-                                t.posIdx = idx + 1;
+                                ctx.posIdx = idx + 1;
                             }
 
                             @field(stats, pos.name).count += 1;
@@ -659,15 +679,15 @@ pub const ProblemMode = enum {
     continue_on_problem,
     stop_at_first_problem,
 };
-pub const OptionsMode = enum {
-    options_in_any_position,
-    options_honors_positionals,
-};
+//pub const OptionsMode = enum {
+//    options_in_any_position,
+//    options_honors_positionals,
+//};
 pub const Opts = struct {
     optionArgSeparator: []const u8 = "=",
     processMode: ProcessMode = .process_all_args,
     problemMode: ProblemMode = .continue_on_problem,
-    optionsMode: OptionsMode = .options_in_any_position,
+    //optionsMode: OptionsMode = .options_in_any_position,
     //optionArgsMode:OptionArgsMode=.SameOrSeparateToken,
 };
 
@@ -736,7 +756,7 @@ pub const CommandLineParser = struct {
                     .multi => |m| {
                         if (m.defaults) |def| {
                             if (def.len < m.min)
-                                @compileError(std.fmt.comptimePrint("Too few default params for {s}, {d} provided, {d} expected", .{ param1.fieldName(), def.len, m.min }));
+                                @compileError(std.fmt.print("Too few default params for {s}, {d} provided, {d} expected", .{ param1.fieldName(), def.len, m.min }));
                         }
                     },
                 }
@@ -806,26 +826,12 @@ pub const CommandLineParser = struct {
             };
             argit.num = 0;
         }
-        var autocompleteIndex: i16 = -1;
-        const autocompleteChar = 0;
-        if (argit.next()) |first| {
-            if (std.mem.startsWith(u8, first.arg, AutoCompleteCommand)) {
-                autocompleteIndex = 1;
-                //self.opts.problemMode = .continue_on_problem;
-            } else {
-                argit.rollback();
-            }
-        }
+
+        var ctx: ProcessingContext = .{};
 
         var processOptions = true;
 
         out: while (argit.next()) |qarg| {
-            if (autocompleteIndex == qarg.num) {
-                if (autocompleteChar >= qarg.argSrcFrom and autocompleteChar <= qarg.argSrcFrom + qarg.arg.len) {
-                    //autocomplete here
-                    _ = 1;
-                }
-            }
             if (self.opts.problemMode == .stop_at_first_problem and t.hasProblems()) {
                 argit.rollback();
                 self.processOnlyFlags(&t, &argit);
@@ -834,7 +840,7 @@ pub const CommandLineParser = struct {
             if (processOptions) {
                 switch (qarg.t) {
                     .long, .short => {
-                        if (t.processOption(qarg, &argit) == .not_found) {
+                        if (t.processOption(&ctx, qarg, &argit) == .not_found) {
                             t.report(error.UnrecognizedOption, "Unrecognized option '{s}'", .{qarg.arg}, qarg);
                             if (!qarg.arglessReq) {
                                 if (argit.knownOptionArgument()) |oa| {
@@ -849,7 +855,9 @@ pub const CommandLineParser = struct {
                         if (isOnlyPositionalsFromHereValue(qarg)) {
                             processOptions = false;
                             argit.state = .only_values;
-                            if (self.opts.processMode == .process_until_only_positionals) break :out;
+                            if (self.opts.processMode == .process_until_only_positionals) {
+                                break :out;
+                            }
                             continue;
                         }
                         //continue to process positionals, ojo no break!
@@ -860,7 +868,7 @@ pub const CommandLineParser = struct {
                     },
                 }
             }
-            if (t.processPositional(qarg) == .not_found) {
+            if (t.processPositional(&ctx, qarg) == .not_found) {
                 t.report(error.UnexpectedPositional, "Unexpected positional argument", .{}, qarg);
             }
             if (self.opts.processMode == .process_until_first_positional) {

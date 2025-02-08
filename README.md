@@ -27,7 +27,8 @@ WARNING: THIS IS A WORK IN PROGRESS, YOU SHOULD EXPECT BREAKING CHANGES AND BUGS
 - Choose between halting at the first encountered problem or collecting all problems
 - Highly customizable and easy to use
 - Lightweight with no dependencies
-- Leverages Zig's powerful compile-time feature as much as possible
+- Leverages Zig's powerful compile-time feature **as much as possible**
+- Autocomplete support
 
 
 ## Documentation
@@ -163,6 +164,21 @@ firefox zig-out/coverture/index.html
 ```
 
 Note: Since the Zig compiler exclusively compiles functions that are explicitly called or referenced and comptime can lead to substantial portions of code not being included in the runtime the coverage results only reflect the extent to which the utilized functions are covered. 
+
+### Autocomplete sample
+
+```
+zig build examples
+
+export PATH=zig-out/bin/:$PATH
+
+source <(sample_autocomplete_completer install -s bash -t sample_autocomplete)
+# or output to /etc/bash_completion.d/
+
+sample_autocomplete --<TAB><TAB>
+
+```
+
 
 ## Caution
 

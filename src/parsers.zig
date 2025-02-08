@@ -56,6 +56,8 @@ pub const Parser = struct {
     }
 };
 
+pub const ParserNOP = .{ .name = "NOP", .type = bool, .help = "" };
+
 //TODO: add parser multiuse, hint to help more fine output
 pub const List = [_]Parser{
     .{ .parseFn = jsonParse, .freeFn = jsonFree, .name = "JSON", .type = json.Parsed(json.Value), .help = "A JSON conforming to RFC 8259.\nhttps://datatracker.ietf.org/doc/html/rfc8259" }, //
@@ -347,5 +349,5 @@ fn jsonFree(comptime parser: Parser, allocator: anytype, rec: anytype) void {
 
 pub inline fn select(comptime stype: []const u8, comptime parsers: []const Parser) Parser {
     inline for (parsers) |parser| if (std.mem.eql(u8, parser.name, stype)) return parser;
-    @compileError(std.fmt.comptimePrint("unsupported param type {s}", .{stype}));
+    @compileError(std.fmt.comptimePrint("unsupported param parser {s}", .{stype}));
 }
