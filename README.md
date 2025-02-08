@@ -165,7 +165,48 @@ firefox zig-out/coverture/index.html
 
 Note: Since the Zig compiler exclusively compiles functions that are explicitly called or referenced and comptime can lead to substantial portions of code not being included in the runtime the coverage results only reflect the extent to which the utilized functions are covered. 
 
+## Autocomplete
+
+You can provide easily an autocompleter for a zarg command line parser. 
+
+### How it works
+
+To enable autocompletion, a command is compiled that analyzes the command line and suggests completion options based on the cursor position in that line. This command also allows installing a lightweight autocompletion script for a specific shell, which will call the autocompletion command for the heavy processing.
+
+You can integreate in the same command or using a separate one, which is the recommended way.
+
+The autocompleter analizes your provided CommandlineParser and suggest completions for:
+
+- Short option names
+- Long option names
+- Option argument types
+- Positional argument types
+
+The built-in supported argument types are:
+- FILE: autocomplete with a file
+- DIR: autocomplete with a directory
+- ENUM: autocomplete with enum values
+
+You could define your own parser with custom autocomplete behaviour.
+
+
+### How to use autocomplete
+
+In order to generate an autocompleter command for a custom CommandlineParser use the following code: 
+
+```zig
+pub fn main() !void {
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    const allocator = gpa.allocator();
+    defer _ = gpa.deinit();
+
+    try zarg.Autocomplete.__main(my_clp, allocator);
+}
+```
+
 ### Autocomplete sample
+
+A complete sample is provided:
 
 ```
 zig build examples
@@ -179,10 +220,23 @@ sample_autocomplete --<TAB><TAB>
 
 ```
 
+### Road map
+
+- Fix and complete 
+- Reorganize code
+- Data structures simplification
+- Params comptime smart param indexing 
+- Documentation
+- Add missing basic parsers
+- Much more tests
+- Help structure rethink
+- Color support for help with custom styles
+- Upgrade to zig 0.14.0 (maintain branch per main zig version)
+
 
 ## Caution
 
-Please note that zarg is a work in progress being developed and tested. If you are using a different Zig compiler version, we cannot guarantee that the library will work as expected. Before reporting any issues, please make sure you are using the recommended Zig compiler version. It is always a good practice to use the same compiler version that a library or application was developed with to avoid any compatibility issues. We are continuously working on providing support for newer versions of the Zig compiler. Please stay tuned for updates.
+**Please note that zarg is a work in progress being developed and tested**. If you are using a different Zig compiler version, we cannot guarantee that the library will work as expected. Before reporting any issues, please make sure you are using the recommended Zig compiler version. It is always a good practice to use the same compiler version that a library or application was developed with to avoid any compatibility issues. We are continuously working on providing support for newer versions of the Zig compiler. Please stay tuned for updates.
 
 ## Contribution
 

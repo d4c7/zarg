@@ -7,7 +7,20 @@ const flagHelp = zarg.flagHelp;
 const singlePositional = zarg.singlePositional;
 const multiPositional = zarg.multiPositional;
 
+pub const ColorEnum = enum {
+    red,
+    green,
+    gray,
+    blue,
+    yellow,
+    orange,
+};
+const parsers = zarg.Parsers.List ++ [_]zarg.Parsers.Parser{ //
+    zarg.Parsers.enumParser("COLOR", ColorEnum, null),
+};
+
 pub const clp = zarg.CommandLineParser.init(.{
+    .parsers = &parsers,
     .params = &([_]zarg.Param{
         singlePositional(.{
             .name = "string",
@@ -48,6 +61,13 @@ pub const clp = zarg.CommandLineParser.init(.{
         flag(.{ //
             .long = "option_flag",
             .help = "Any option Flag.",
+        }),
+        option(.{ //
+            .long = "color",
+            .short = "C",
+            .parser = "COLOR",
+            .default = "red",
+            .help = "A color",
         }),
     }),
 });

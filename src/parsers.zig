@@ -10,6 +10,25 @@ const Check = @import("checks.zig");
 pub const ParseFn = fn (comptime parser: Parser, allocator: anytype, rec: anytype, str: []const u8) anyerror!void;
 pub const FreeFn = fn (comptime parser: Parser, allocator: anytype, rec: anytype) void;
 
+pub const AutocompleteItem = struct {
+    value: []const u8,
+    // help: [][]const u8,
+};
+
+pub const Autocompletions = struct {
+    items: []AutocompleteItem,
+    allocator: std.mem.Allocator,
+
+    pub fn deinit(self: *Autocompletions) void {
+        // for (self.items) |i| {
+        //   self.allocator.free(i);
+        //}
+        self.allocator.free(self.items);
+    }
+};
+
+pub const AutocompleteFn = fn (comptime parser: Parser, allocator: anytype, prefix: []const u8) anyerror!Autocompletions;
+
 //TODO:-- split parsers
 
 pub const Parser = struct {
@@ -18,6 +37,7 @@ pub const Parser = struct {
     type: type,
     //TODO:vtable?
     parseFn: ParseFn = basicParse,
+    autocompleteFn: ?AutocompleteFn = null,
     freeFn: ?FreeFn = null,
     checkFn: ?Check.Fn = null,
     comptimeFriendly: bool = true,
@@ -118,6 +138,26 @@ fn parseBool(str: []const u8) !bool {
     return error.NotABooleanValue;
 }
 
+fn enumAutocomplete(comptime parser: Parser, allocator: anytype, prefix: []const u8) anyerror!Autocompletions {
+    const T = parser.type;
+    const info = @typeInfo(T);
+    if (info != .Enum) {
+        @compileError(std.parsermt.comptimePrint("Required enum, found {s}", .{@tagName(info)}));
+    }
+    var list = std.ArrayList(AutocompleteItem).init(allocator);
+    defer list.deinit();
+
+    inline for (info.Enum.fields) |field| {
+        if (std.mem.startsWith(u8, field.name, prefix)) {
+            try list.append(.{ .value = field.name });
+        }
+    }
+    return .{
+        .allocator = allocator,
+        .items = try list.toOwnedSlice(),
+    };
+}
+
 fn enumParse(comptime parser: Parser, allocator: anytype, recv: anytype, str: []const u8) !void {
     _ = allocator;
     const T = parser.type;
@@ -147,6 +187,7 @@ pub fn enumParser(comptime name: []const u8, comptime e: anytype, comptime help:
     };
     return Parser{ //
         .parseFn = enumParse,
+        .autocompleteFn = enumAutocomplete,
         .name = name,
         .type = e,
         .help = h,

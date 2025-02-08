@@ -159,12 +159,10 @@ pub const ArgIterator2 = struct {
     }
 
     pub fn deinit(self: *ArgIterator2) void {
-        defer {
-            for (self.args.tokens) |token| {
-                self.allocator.free(token);
-            }
-            self.allocator.free(self.args.tokens);
+        for (self.args.tokens) |token| {
+            self.allocator.free(token);
         }
+        self.allocator.free(self.args.tokens);
     }
 };
 
@@ -343,7 +341,7 @@ fn command_suggest(args0: anytype, allocator: std.mem.Allocator, _: usize, clp_t
                                 if (param.kind.option.format != .flag) {
                                     if (p.num == args.word_idx) {
                                         const parser = param.parser(clp_target);
-                                        try out.print("{s}:{s}\n", .{ parser.name, prx });
+                                        try outParamAutocomplete(parser, allocator, prx, out);
                                         break :xx;
                                     }
                                     if (argit.next()) |n| {
@@ -364,7 +362,7 @@ fn command_suggest(args0: anytype, allocator: std.mem.Allocator, _: usize, clp_t
                                 if (param.kind.option.format != .flag) {
                                     if (p.num == args.word_idx) {
                                         const parser = param.parser(clp_target);
-                                        try out.print("{s}:{s}\n", .{ parser.name, prx });
+                                        try outParamAutocomplete(parser, allocator, prx, out);
                                         break :xx;
                                     }
                                     if (argit.next()) |n| {
@@ -385,7 +383,7 @@ fn command_suggest(args0: anytype, allocator: std.mem.Allocator, _: usize, clp_t
                                 if (position_pos > 0) position_pos -= 1;
                                 if (position_pos == 0 or param.kind.positional.format == .multi) {
                                     const parser = param.parser(clp_target);
-                                    try out.print("{s}:{s}\n", .{ parser.name, prx });
+                                    try outParamAutocomplete(parser, allocator, prx, out);
                                     break :xx;
                                 }
                             }
@@ -400,6 +398,17 @@ fn command_suggest(args0: anytype, allocator: std.mem.Allocator, _: usize, clp_t
     }
 }
 
+pub fn outParamAutocomplete(parser: zarg.Parsers.Parser, allocator: std.mem.Allocator, prx: []const u8, out: anytype) !void {
+    if (parser.autocompleteFn) |f| {
+        var list = try f(parser, allocator, prx);
+        defer list.deinit();
+        for (list.items) |i| {
+            try out.print("{s}\t{s}\n", .{ i.value, "help" });
+        }
+    } else {
+        try out.print("{s}:{s}\n", .{ parser.name, prx });
+    }
+}
 pub const CommandEnum = enum {
     install,
     suggest,
