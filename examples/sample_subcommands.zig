@@ -10,9 +10,9 @@ const builtin = @import("builtin");
 const option = zarg.option;
 const multiOption = zarg.multiOption;
 const flag = zarg.flag;
-const flagHelp = zarg.flagHelp;
-const singlePositional = zarg.singlePositional;
-const multiPositional = zarg.multiPositional;
+const help = zarg.help;
+const positional = zarg.positional;
+const positionals = zarg.positionals;
 
 pub const CommandEnum = enum {
     command1,
@@ -28,13 +28,13 @@ pub fn main() !void {
         .desc = "ZARG Sample Command Line Parser",
         .parsers = &parsers,
         .params = &[_]zarg.Param{
-            singlePositional(.{
+            positional(.{
                 .name = "command",
                 .parser = "COMMAND",
                 //.default = @tagName(CommandEnum.command1),
                 .help = "A command",
             }),
-            flagHelp(.{ .long = "help", .short = "h", .help = "Shows this help." }),
+            help(.{ .long = "help", .short = "h", .help = "Shows this help." }),
             option(.{ .long = "option", .short = "o", .parser = "STR", .default = "1", .help = "An option" }),
         },
         .footer = "Footer",
@@ -44,12 +44,12 @@ pub fn main() !void {
     const command1_clp = zarg.CommandLineParser.init(.{
         .desc = "Command 1",
         .params = &[_]zarg.Param{
-            singlePositional(.{
+            positional(.{
                 .name = "Value",
                 .parser = "STR",
                 .help = "A value",
             }),
-            flagHelp(.{ .long = "help", .short = "h", .help = "Shows this help." }),
+            help(.{ .long = "help", .short = "h", .help = "Shows this help." }),
             option(.{ .long = "option", .short = "o", .parser = "STR", .default = "2", .help = "An option" }),
         },
         .footer = "Footer Command 1",

@@ -10,7 +10,6 @@ const optionMulti = zarg.optionMulti;
 const positionalsDef = zarg.positionalsDef;
 const flag = zarg.flag;
 const help = zarg.help;
-const positionals = zarg.positionals;
 const positional = zarg.positional;
 
 pub fn main() !void {
@@ -21,19 +20,8 @@ pub fn main() !void {
     const clp = comptime zarg.CommandLineParser.init(.{
         .params = &[_]zarg.Param{
             help(.{ .long = "help", .short = "h", .help = "Shows this help." }),
-            positional(.{ //
-                .name = "input",
-                .parser = "STR",
-                .check = Checks.Dir(.{ .mode = .read_only }).f,
-            }),
-            positionals(.{ //
-                .name = "dir",
-                .min = 1,
-                .max = 5,
-                .parser = "DIR",
-                .check = Checks.Dir(.{ .mode = .read_only }).f,
-            }),
-        },
+            option(.{ .long = "echo", .short = "e", .parser = "STR", .default = "echo", .help = "Echo." }),
+        }, //
     });
 
     var s = clp.parseArgs(allocator);
@@ -48,7 +36,6 @@ pub fn main() !void {
         try s.printProblems(std.io.getStdErr().writer(), .all_problems);
         return;
     }
-    for (s.arg.dir.items) |i| {
-        std.debug.print("readable dir: {s}\n", .{i});
-    }
+
+    std.debug.print("echo: {s}\n", .{s.arg.echo});
 }

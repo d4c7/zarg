@@ -3,9 +3,9 @@ const builtin = @import("builtin");
 const option = zarg.option;
 const multiOption = zarg.multiOption;
 const flag = zarg.flag;
-const flagHelp = zarg.flagHelp;
-const singlePositional = zarg.singlePositional;
-const multiPositional = zarg.multiPositional;
+const help = zarg.help;
+const positional = zarg.positional;
+const positionals = zarg.positionals;
 
 pub const ColorEnum = enum {
     red,
@@ -22,12 +22,12 @@ const parsers = zarg.Parsers.List ++ [_]zarg.Parsers.Parser{ //
 pub const clp = zarg.CommandLineParser.init(.{
     .parsers = &parsers,
     .params = &([_]zarg.Param{
-        singlePositional(.{
+        positional(.{
             .name = "string",
             .parser = "FILE",
             .help = "Any string.",
         }),
-        flagHelp(.{ //
+        help(.{ //
             .long = "help",
             .short = "h",
             .help = "Shows this help.",

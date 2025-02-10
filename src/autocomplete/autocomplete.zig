@@ -173,9 +173,9 @@ const builtin = @import("builtin");
 const option = zarg.option;
 const multiOption = zarg.multiOption;
 const flag = zarg.flag;
-const flagHelp = zarg.flagHelp;
-const singlePositional = zarg.singlePositional;
-const multiPositional = zarg.multiPositional;
+const help = zarg.help;
+const positional = zarg.positional;
+const positionals = zarg.positionals;
 const ComptimeHelp = zarg.ComptimeHelp;
 
 pub const AutocompleteShellEnum = enum {
@@ -205,7 +205,7 @@ fn command_install(args0: anytype, exe: []const u8, allocator: std.mem.Allocator
                 .help = "Command name target if it's external",
                 .must = false,
             }),
-            flagHelp(.{ //
+            help(.{ //
                 .long = "help",
                 .short = "h",
                 .help = "Shows the help.",
@@ -251,13 +251,13 @@ fn command_suggest(args0: anytype, allocator: std.mem.Allocator, _: usize, clp_t
                 .help = "This is the cursor absolute position at the full command line from which the arg is autocompleted.",
                 .must = false,
             }),
-            singlePositional(.{ //
+            positional(.{ //
                 .name = "command-line",
                 .parser = "STR",
                 .help = "Full raw command line.",
                 .must = true,
             }),
-            flagHelp(.{ //
+            help(.{ //
                 .long = "help",
                 .short = "h",
                 .help = "Shows the help.",
@@ -423,12 +423,12 @@ pub fn __main(clp_target: zarg.CommandLineParser, allocator: std.mem.Allocator) 
         .desc = "Autocomplete Command Line Parser",
         .parsers = &parsers,
         .params = &[_]zarg.Param{
-            singlePositional(.{
+            positional(.{
                 .name = "command",
                 .parser = "COMMAND",
                 .help = "A command",
             }),
-            flagHelp(.{ .long = "help", .short = "h", .help = "Shows this help." }),
+            help(.{ .long = "help", .short = "h", .help = "Shows this help." }),
         },
         .footer = "Footer",
         .opts = .{ .processMode = .process_until_first_positional, .problemMode = .continue_on_problem },

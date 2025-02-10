@@ -9,8 +9,8 @@ const option = zarg.option;
 const optionMulti = zarg.optionMulti;
 const positionalsDef = zarg.positionalsDef;
 const flag = zarg.flag;
-const flagHelp = zarg.flagHelp;
-const singlePositional = zarg.singlePositional;
+const help = zarg.help;
+const positional = zarg.positional;
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
@@ -19,18 +19,18 @@ pub fn main() !void {
 
     const clp = comptime zarg.CommandLineParser.init(.{
         .params = &[_]zarg.Param{
-            singlePositional(.{ //
+            positional(.{ //
                 .name = "src",
                 .parser = "DIR",
                 .check = Checks.Dir(.{ .mode = .read_only }).f,
             }),
-            singlePositional(.{ //
+            positional(.{ //
                 .name = "dst",
                 .parser = "DIR",
                 .check = Checks.Dir(.{ .mode = .read_only }).f,
             }),
             flag(.{ .long = "flag", .short = "f", .help = "This is a flag." }),
-            flagHelp(.{ .long = "help", .short = "h", .help = "Shows this help." }),
+            help(.{ .long = "help", .short = "h", .help = "Shows this help." }),
         },
     });
 

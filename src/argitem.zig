@@ -110,9 +110,7 @@ pub fn ArgsController(comptime T: type) type {
                     if (dbldash and arg.len == 2) {
                         return self.value(arg, raw);
                     }
-                    // starts with '-' but is not a single '-' and we're processing optionals yet
-                    //check arg contains separator like -o=1 or --opt=12
-                    //case -o"a=2"  ?
+                    // starts with '-' but is not a single '-' and we're not processing optionals yet
                     {
                         var i: usize = if (dbldash) 2 else 1;
                         while (i < arg.len) : (i += 1) {
@@ -145,7 +143,7 @@ pub fn ArgsController(comptime T: type) type {
                             self.state = .multi_short_option;
                             self.rest = arg[2..];
                         }
-                        //return fisrt (or full) part as short option
+                        //return first (or full) part as short option
                         return self.shortOption(arg[1..2], raw);
                     }
                 }
@@ -168,14 +166,14 @@ fn testGeneralCmdLine(input_cmd_line: []const u8, expected_args: []const ArgItem
     var ctrl = ArgsController(*std.process.ArgIteratorGeneral(.{})){ .argIterator = &it, .optionArgSeparator = "=" };
     for (expected_args) |expected_arg| {
         const arg = ctrl.next().?;
-        // std.debug.print("\n-> {any}\n", .{arg});
+        //std.debug.print("\n-> {any}\n", .{arg});
         try std.testing.expectEqualDeep(expected_arg, arg);
     }
     try std.testing.expect(ctrl.next() == null);
 }
 
 test "arg controller tokens" {
-    try testGeneralCmdLine("-b = 2  -c =3 -0 -x=1 -y= -abc=1 --de --fg=12 -- -  -= --= -=1 --=2 -vp 1234 -h='quoted' -i='q=1'", &.{
+    try testGeneralCmdLine("-0 -x=1 -y= -abc=1 --de --fg=12 -- -  -= --= -=1 --=2 -vp 1234 -h='quoted' -i='q=1' -b='1'0'", &.{
         .{
             .arg = "0",
             .t = .short,
@@ -327,7 +325,7 @@ test "arg controller tokens" {
             .argSrcFrom = 0,
         },
         .{
-            .arg = "'quoted'",
+            .arg = "quoted",
             .t = .value,
             .num = 15,
             .argSrc = "-h='quoted'",
@@ -341,10 +339,24 @@ test "arg controller tokens" {
             .argSrcFrom = 0,
         },
         .{
-            .arg = "'q=1'",
+            .arg = "q=1",
             .t = .value,
             .num = 16,
             .argSrc = "-i='q=1'",
+            .argSrcFrom = 3,
+        },
+        .{
+            .arg = "b",
+            .t = .short,
+            .num = 17,
+            .argSrc = "-b='1'0'",
+            .argSrcFrom = 0,
+        },
+        .{
+            .arg = "1'0",
+            .t = .value,
+            .num = 17,
+            .argSrc = "-b='1'0'",
             .argSrcFrom = 3,
         },
     });

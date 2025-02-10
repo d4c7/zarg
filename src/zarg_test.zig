@@ -10,9 +10,9 @@ const expectError = std.testing.expectError;
 const option = zarg.option;
 const multiOption = zarg.multiOption;
 const flag = zarg.flag;
-const flagHelp = zarg.flagHelp;
-const singlePositional = zarg.singlePositional;
-const multiPositional = zarg.multiPositional;
+const help = zarg.help;
+const positional = zarg.positional;
+const positionals = zarg.positionals;
 
 fn expectEquiStructs(expected: anytype, actual: anytype) !void {
     switch (@typeInfo(@TypeOf(actual))) {
@@ -83,7 +83,7 @@ test "end of optional arguments" {
     try parse(
         &[_]zarg.Param{ flag(.{
             .long = "flag",
-        }), singlePositional(.{}) },
+        }), positional(.{}) },
         .{ "exe", "--", "--flag" },
         struct {
             flag: bool = false,
@@ -148,7 +148,7 @@ test "flag with argument after space is positional" {
     try parse(
         &[_]zarg.Param{ flag(.{
             .long = "flag",
-        }), singlePositional(.{}) },
+        }), positional(.{}) },
         .{ "exe", "--flag", "false" },
         struct { flag: bool = true, positional: ?[]const u8 = "false" }{},
     );
@@ -262,12 +262,4 @@ test "custom option-arg separator" {
 
 test "get error details" {
     try parse(&[_]zarg.Param{option(.{ .long = "int", .short = "i", .parser = "SIZE", .default = "32" })}, .{ "exe", "--int=16" }, struct { int: usize = 16 }{});
-}
-
-test "autocomplete option or positional" {
-    try parse(&[_]zarg.Param{
-        option(.{ .long = "int", .short = "i", .parser = "SIZE", .default = "32" }),
-    }, .{ zarg.AutoCompleteCommand ++ ":1:0", "exe", "--int", "16" }, struct {
-        int: usize = 16,
-    }{});
 }

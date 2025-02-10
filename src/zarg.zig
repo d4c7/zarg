@@ -208,7 +208,7 @@ pub const DefaultHelpFlag = struct {
     help: []const u8 = ComptimeHelp.DefaultHelpFlagText,
 };
 
-pub fn flagHelp(comptime opts: DefaultHelpFlag) Param {
+pub fn help(comptime opts: DefaultHelpFlag) Param {
     return Param{
         .kind = .{ .option = .{
             .short = opts.short,
@@ -220,7 +220,7 @@ pub fn flagHelp(comptime opts: DefaultHelpFlag) Param {
     };
 }
 
-pub const DefaultSinglePositional = struct {
+pub const Defaultpositional = struct {
     parser: []const u8 = "STR",
     //default: ?[]const u8 = null,
     help: []const u8 = "Single positional", //TODO: to helps
@@ -229,7 +229,7 @@ pub const DefaultSinglePositional = struct {
     must: bool = true,
 };
 
-pub fn singlePositional(comptime opts: DefaultSinglePositional) Param {
+pub fn positional(comptime opts: Defaultpositional) Param {
     return Param{
         .kind = .{
             .positional = .{
@@ -248,7 +248,7 @@ pub fn singlePositional(comptime opts: DefaultSinglePositional) Param {
     };
 }
 
-pub const DefaultMultiPositional = struct {
+pub const Defaultpositionals = struct {
     parser: []const u8 = "STR",
     //   defaults: ?[]const []const u8 = null,
     min: usize = 0,
@@ -258,7 +258,7 @@ pub const DefaultMultiPositional = struct {
     name: [:0]const u8 = "positional", //TODO: to helps
 };
 
-pub fn multiPositional(comptime opts: DefaultMultiPositional) Param {
+pub fn positionals(comptime opts: Defaultpositionals) Param {
     return Param{ .kind = .{ .positional = .{ .name = opts.name, .format = .{ .multi = .{
         .parser = opts.parser,
         .min = opts.min,
@@ -734,7 +734,7 @@ pub const CommandLineParser = struct {
                     },
                     .positional => {
                         if (positionalMultiValueFound) {
-                            @compileError("multipositional must be the last positional param");
+                            @compileError("positionals must be the last positional param");
                         }
 
                         positionalMultiValueFound = param1.kind.positional.format == .multi;

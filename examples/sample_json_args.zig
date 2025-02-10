@@ -8,9 +8,9 @@ const Parsers = zarg.Parsers;
 const option = zarg.option;
 const multiOption = zarg.multiOption;
 const flag = zarg.flag;
-const flagHelp = zarg.flagHelp;
-const singlePositional = zarg.singlePositional;
-const multiPositional = zarg.multiPositional;
+const help = zarg.help;
+const positional = zarg.positional;
+const positionals = zarg.positionals;
 
 pub const ColorEnum = enum {
     red,
@@ -75,7 +75,7 @@ pub fn main() !void {
     const clp = zarg.CommandLineParser.init(.{
         .parsers = &parsers,
         .params = &[_]zarg.Param{
-            flagHelp(.{ .long = "help", .short = "h", .help = "Shows this help." }),
+            help(.{ .long = "help", .short = "h", .help = "Shows this help." }),
             option(.{ .long = "json", .parser = "JSON", .default = my_json, .help = "This is a dynamic json object type" }),
             option(.{ .long = "json_config", .parser = "JSON-CONFIG", .default = my_json, .help = "This is a json object type" }),
         },

@@ -71,12 +71,12 @@ Define a struct that defines the command-line arguments, help texts, headers and
         \\ /___\__,_|_|  \__, |
         \\               |___/  
         ,.params = &[_]zarg.Param{
-            flagHelp(.{ .long = "help", .short = "h", .help = "Shows this help." }),
+            help(.{ .long = "help", .short = "h", .help = "Shows this help." }),
             flag(.{ .long = "version", .help = "Output version information and exit." }),
             flag(.{ .long = "verbose", .short = "v", .help = "Enable verbose output." }),
             option(.{ .long = "port", .short = "p", .parser = "TCP_PORT", .default = "1234", .help = "Listening Port." }),
             option(.{ .long = "host", .short = "H", .parser = "TCP_HOST", .default = "localhost", .help = "Host name" }),
-            singlePositional(.{ .parser = "DIR", .default = ".", .check = &Check.Dir(.{ .mode = .read_only }).f }),
+            positional(.{ .parser = "DIR", .default = ".", .check = &Check.Dir(.{ .mode = .read_only }).f }),
         }, 
         .desc = "This command starts an HTTP Server and serves static content from directory DIR.", 
         .footer = "More info: <https://d4c7.github.io/zig-zagueando/>.",

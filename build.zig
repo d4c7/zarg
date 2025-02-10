@@ -37,10 +37,11 @@ pub fn build(b: *std.Build) void {
         "sample_head_and_foot",
         "sample_json_args",
         "sample_positionals",
-        "sample_multipositional",
+        "sample_positionals",
         "sample_subcommands",
         "sample_autocomplete",
         "sample_autocomplete_completer",
+        "sample_echo",
     }) |exe_name| {
         const exe = b.addExecutable(.{
             .name = exe_name,

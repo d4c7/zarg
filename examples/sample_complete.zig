@@ -10,9 +10,9 @@ const builtin = @import("builtin");
 const option = zarg.option;
 const multiOption = zarg.multiOption;
 const flag = zarg.flag;
-const flagHelp = zarg.flagHelp;
-const singlePositional = zarg.singlePositional;
-const multiPositional = zarg.multiPositional;
+const help = zarg.help;
+const positional = zarg.positional;
+const positionals = zarg.positionals;
 
 pub const MyTypeError = error{InvalidMyTypeValue};
 
@@ -57,7 +57,7 @@ pub fn main() !void {
         .desc = "Sample Command Line Parser zarg",
         .parsers = &parsers,
         .params = &[_]zarg.Param{
-            multiPositional(.{ //
+            positionals(.{ //
                 .name = "Directory",
                 .min = 1,
                 .max = 5,
@@ -65,8 +65,8 @@ pub fn main() !void {
                 .check = Check.Dir(.{ .mode = .read_only }).f,
                 .help = "Directory path with read permission",
             }),
-            flagHelp(.{ .long = "help", .short = "h", .help = "Shows this help." }),
-            flagHelp(.{ .short = "?", .help = "Shows this help too." }),
+            help(.{ .long = "help", .short = "h", .help = "Shows this help." }),
+            help(.{ .short = "?", .help = "Shows this help too." }),
             flag(.{ .long = "verbose", .short = "v", .help = "Enable verbose output." }),
 
             flag(.{ .long = "version", .help = "Output version and exit." }),
