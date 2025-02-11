@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 David Castañon Belloso <d4c7@proton.me>
+// SPDX-FileCopyrightText: 2023-2025 David Castañon Belloso <d4c7@proton.me>
 // SPDX-License-Identifier: EUPL-1.2
 // This file is part of zarg project (https://github.com/d4c7/zarg)
 
@@ -8,7 +8,7 @@ const Parsers = zarg.Parsers;
 const Check = zarg.Checks;
 const builtin = @import("builtin");
 const option = zarg.option;
-const multiOption = zarg.multiOption;
+const options = zarg.options;
 const flag = zarg.flag;
 const help = zarg.help;
 const positional = zarg.positional;
@@ -73,12 +73,12 @@ pub fn main() !void {
 
             option(.{ .long = "alloc", .parser = "MY_TYPE_ALLOC", .default = "ONE", .help = "This is a custom type with allocation\nUse it with care." }),
             option(.{ .long = "alloc_opt", .parser = "MY_TYPE_ALLOC", .help = "This is a custom type with allocation but optional\nUse it with care." }),
-            option(.{ .long = "color", .short = "c", .parser = "COLOR", .default = @tagName(ColorEnum.red), .help = "A color for your life." }),
+            options(.{ .long = "color", .min = 1, .max = 10, .short = "c", .parser = "COLOR", .help = "A color for your life." }),
             option(.{ .long = "🧘", .parser = "MY_TYPE", .default = "A", .help = "This is a custom type optional argument\nUse it with care." }),
             option(.{ .long = "port", .short = "p", .parser = "TCP_PORT", .default = "1234", .help = "Server listen port." }),
             option(.{ .long = "size", .parser = "SIZE", .default = "3K", .help = "Size for something." }),
             option(.{ .long = "size2", .parser = "SIZE", .default = "8K", .help = "Size 2 for something." }),
-            multiOption(.{
+            options(.{
                 .long = "header",
                 .short = "H",
                 .parser = "STR",
@@ -90,12 +90,12 @@ pub fn main() !void {
             flag(.{
                 .long = "flag",
             }),
-            multiOption(.{ .long = "array0a1", .parser = "STR", .help = "Help lines", .min = 0, .max = 1 }),
-            multiOption(.{ .long = "array0a2", .parser = "STR", .help = "Help lines", .min = 0, .max = 2 }),
-            multiOption(.{ .long = "array0aN", .parser = "STR", .help = "Help lines", .min = 0 }),
-            multiOption(.{ .long = "array1a1", .parser = "STR", .help = "Help lines", .min = 1, .max = 1 }),
-            multiOption(.{ .long = "array1a2", .parser = "STR", .help = "Help lines", .min = 1, .max = 2 }),
-            multiOption(.{ .long = "array1aN", .parser = "STR", .help = "Help lines", .min = 1 }),
+            options(.{ .long = "array0a1", .parser = "STR", .help = "Help lines", .min = 0, .max = 1 }),
+            options(.{ .long = "array0a2", .parser = "STR", .help = "Help lines", .min = 0, .max = 2 }),
+            options(.{ .long = "array0aN", .parser = "STR", .help = "Help lines", .min = 0 }),
+            options(.{ .long = "array1a1", .parser = "STR", .help = "Help lines", .min = 1, .max = 1 }),
+            options(.{ .long = "array1a2", .parser = "STR", .help = "Help lines", .min = 1, .max = 2 }),
+            options(.{ .long = "array1aN", .parser = "STR", .help = "Help lines", .min = 1 }),
         },
         .footer =
         \\Exit status:

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 David Castañon Belloso <d4c7@proton.me>
+// SPDX-FileCopyrightText: 2023-2025 David Castañon Belloso <d4c7@proton.me>
 // SPDX-License-Identifier: EUPL-1.2
 // This file is part of zarg project (https://github.com/d4c7/zarg)
 
@@ -8,7 +8,7 @@ const builtin = std.builtin;
 const expectError = std.testing.expectError;
 
 const option = zarg.option;
-const multiOption = zarg.multiOption;
+const options = zarg.options;
 const flag = zarg.flag;
 const help = zarg.help;
 const positional = zarg.positional;
@@ -49,17 +49,17 @@ const TestIterator = struct {
     }
 };
 
-fn parse(comptime options: []const zarg.Param, comptime args: anytype, comptime expected_args: anytype) !void {
-    try parseFull(options, args, expected_args, .{});
+fn parse(comptime opts: []const zarg.Param, comptime args: anytype, comptime expected_args: anytype) !void {
+    try parseFull(opts, args, expected_args, .{});
 }
 
 fn parseFull(
-    comptime options: []const zarg.Param,
+    comptime opts: []const zarg.Param,
     comptime args: anytype,
     comptime expected_args: anytype,
     comptime cfg: zarg.Opts,
 ) !void {
-    const parser = zarg.CommandLineParser.init(.{ .params = options, .opts = cfg });
+    const parser = zarg.CommandLineParser.init(.{ .params = opts, .opts = cfg });
     var it = TestIterator.init(args);
     const s = parser.parse(&it, std.testing.allocator, .{});
     defer s.deinit();

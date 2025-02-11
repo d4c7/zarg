@@ -145,7 +145,7 @@ pub const DefaultMulti = struct {
     check: ?*const Checks.Fn = null,
 };
 
-pub fn multiOption(comptime opts: DefaultMulti) Param {
+pub fn options(comptime opts: DefaultMulti) Param {
     return Param{
         .kind = .{ .option = .{
             .short = opts.short,
