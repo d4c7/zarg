@@ -136,6 +136,23 @@ This command starts an HTTP Server and serves static content from directory DIR.
 More info: <https://d4c7.github.io/zig-zagueando/>.
 ```
 
+Detailed error reporting with `all_problems` mode:
+
+```txt
+$ zig-out/bin/sample_complete -c=black -k -p 70000 -vv
+sample_complete: 
+ * Unsupported value 'black' of type COLOR for option 'c': InvalidEnum (-c=black) at arg #1
+ * Unrecognized option 'k' (-k) at arg #2
+ * Unsupported value '70000' of type TCP_PORT for option 'p': Overflow (70000) at arg #4
+ * Unexpected repeated flag 'v' (-vv) at arg #5
+ * Expected between 1 and 5 Directory's, but found 0
+ * Expected --alloc_opt
+ * Expected 1 --array1a1's, but found 0
+ * Expected between 1 and 2 --array1a2's, but found 0
+ * Expected 1 --array1aN's, but found 0
+Try 'zig-out/bin/sample_complete --help' for more information.
+```
+
 View more examples in the [`examples`](examples) folder.
 
 You can build the samples using:

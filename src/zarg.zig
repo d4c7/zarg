@@ -374,7 +374,7 @@ pub fn Args(comptime clp: CommandLineParser) type {
         stats: TStats = .{},
         allocator: std.mem.Allocator, //TODO:optional
         problems: std.ArrayList(Problem), // TODO:  fixed limited list and aflag allocator and print too many errors if more problems??
-
+        lastArgIndex: usize = 0,
         const Self = @This();
 
         pub fn deinit(self: Self) void {
@@ -776,6 +776,7 @@ pub const CommandLineParser = struct {
 
     pub fn processOnlyFlags(comptime self: CommandLineParser, t: *Args(self), argit: anytype) void {
         while (argit.next()) |qarg| {
+            if (argit.num > t.lastArgIndex) t.lastArgIndex = argit.num;
             switch (qarg.t) {
                 .long, .short => {
                     inline for (self.params) |param| {
@@ -832,6 +833,8 @@ pub const CommandLineParser = struct {
         var processOptions = true;
 
         out: while (argit.next()) |qarg| {
+            if (argit.num > t.lastArgIndex) t.lastArgIndex = argit.num;
+
             if (self.opts.problemMode == .stop_at_first_problem and t.hasProblems()) {
                 argit.rollback();
                 self.processOnlyFlags(&t, &argit);
