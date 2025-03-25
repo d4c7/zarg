@@ -43,7 +43,7 @@ WARNING: THIS IS A WORK IN PROGRESS, YOU SHOULD EXPECT BREAKING CHANGES AND BUGS
 To use zarg in your project, you need to add the dependency to your `build.zig.zon`:
 
 ```bash
-$ zig fetch --save git+https://github.com/d4c7/zarg
+$ zig fetch --save git+https://github.com/d4c7/zarg#0.14.0
 ```
 
 Then you could add the module to to your `build.zig` file:
@@ -57,6 +57,103 @@ const zarg = b.dependency("zarg", .{
 exe.root_module.addImport("zarg", zarg.module("zarg"));
 
 ```
+## Installation Guide for Zig Beginners
+
+We are all beginners over and over again
+
+### Step 1: Init Zig Project
+
+The zig init command initializes a new Zig project by creating a basic project structure, including a build.zig file for managing builds and a src folder for your source code. It's a starting point for writing Zig programs.
+
+```bash
+mkdir zarg_startup
+cd zarg_startup
+zig init
+```
+
+### Step 2: Fetch Zarg 
+
+Use `zig fetch` to fetch version `0.14.0` of the `zarg` package from the a repository, saves it to the `zig.mod` file, and makes it available for use in your Zig project.
+
+```bash
+$ zig fetch --save git+https://github.com/d4c7/zarg#0.14.0
+```
+
+or 
+
+```bash
+$ zig fetch --save git+https://codeberg.org/d4c7/zarg#0.14.0
+```
+
+### Step 3: Add Zarg As a Module
+
+Add the module to `build.zig` at the end of the `pub fn build(b: *std.Build) void` function.
+
+```zig
+const zarg = b.dependency("zarg", .{
+    .target = target,
+    .optimize = optimize,
+});
+exe.root_module.addImport("zarg", zarg.module("zarg"));
+
+```
+
+### Step 4: Add Zarg Code To The Project
+
+
+Then add imports at the top of `src/main.zig` 
+
+```zig
+const zarg = @import("zarg");
+```
+
+and add the arguments parsing code just after at the beggining of the main function:
+```zig
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    const allocator = gpa.allocator();
+    defer _ = gpa.deinit();
+
+    const clp = comptime zarg.CommandLineParser.init(.{
+        .params = &[_]zarg.Param{
+            zarg.help(.{ .long = "help", .short = "h", .help = "Shows this help." }),
+            zarg.option(.{ .long = "accept", . must=true, .parser = "BOOL", .help = "Accept or not the terms." }),
+        }, //
+    });
+
+    var s = clp.parseArgs(allocator);
+    defer s.deinit();
+
+    if (s.helpRequested()) {
+        try s.printHelp(std.io.getStdErr().writer());
+        return;
+    }
+
+    if (s.hasProblems()) {
+        try s.printProblems(std.io.getStdErr().writer(), .all_problems);
+        return;
+    }
+
+    if (!(s.arg.accept orelse false)) {
+        std.debug.print("mmm, ok, bye\n", .{});
+        return;
+    }
+```
+
+### Step 5: Run And Fun
+
+Finally, build the project using the following command
+
+```bash
+$ zig build
+```
+
+And run it! 
+
+``` bash
+zig-out/bin/zarg_startup --help
+```
+
+
 
 ## Usage
 
