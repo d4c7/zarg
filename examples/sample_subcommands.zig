@@ -80,7 +80,7 @@ pub fn main() !void {
     if (s.arg.command) |p| {
         switch (p) {
             .command1 => {
-                var cmd1 = command1_clp.parse(&args, allocator, .{ .exe = s.exe, .argOffset = 1 });
+                var cmd1 = command1_clp.parse(&args, allocator, .{ .exe = s.exe, .argOffset = s.lastArgIndex+1 });
                 defer cmd1.deinit();
                 if (cmd1.helpRequested()) {
                     try cmd1.printHelp(std.io.getStdErr().writer());

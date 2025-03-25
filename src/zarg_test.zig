@@ -16,10 +16,10 @@ const positionals = zarg.positionals;
 
 fn expectEquiStructs(expected: anytype, actual: anytype) !void {
     switch (@typeInfo(@TypeOf(actual))) {
-        .Struct => |structType| {
+        .@"struct" => |structType| {
             inline for (structType.fields) |field| {
                 switch (@typeInfo(field.type)) {
-                    .Struct => {
+                    .@"struct" => {
                         expectEquiStructs(@field(expected, field.name), @field(actual, field.name));
                     },
                     else => try std.testing.expectEqual(@field(expected, field.name), @field(actual, field.name)),

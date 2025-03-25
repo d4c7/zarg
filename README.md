@@ -7,7 +7,7 @@ This file is part of zarg project (https://github.com/d4c7/zarg)
 
 zarg (former zig-argueando) is a minimalist and efficient command-line parsing library written in Zig. It is designed to offer a convenient way of parsing command-line arguments in a simple yet powerful manner. With zarg, you can easily set options, flags, and positional arguments for your command-line applications.
 
-Version 0.0.1 for zig 0.3.0
+Version 0.0.1 for zig 0.14.0
 
 ```
 WARNING: THIS IS A WORK IN PROGRESS, YOU SHOULD EXPECT BREAKING CHANGES AND BUGS
@@ -248,7 +248,6 @@ sample_autocomplete --<TAB><TAB>
 - Much more tests
 - Help structure rethink
 - Color support for help with custom styles
-- Upgrade to zig 0.14.0 (maintain branch per main zig version)
 
 
 ## Caution

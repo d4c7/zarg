@@ -36,16 +36,16 @@ pub const Parser = struct {
     help: []const u8,
     type: type,
     //TODO:vtable?
-    parseFn: ParseFn = basicParse,
+    parseFn: *const ParseFn = basicParse,
     autocompleteFn: ?AutocompleteFn = null,
-    freeFn: ?FreeFn = null,
-    checkFn: ?Check.Fn = null,
+    freeFn: ?*const FreeFn = null,
+    checkFn: ?*const Check.Fn = null,
     comptimeFriendly: bool = true,
 
     inline fn asOptional(comptime T: type, t: anytype) ?T {
         const ParserInfo = @typeInfo(@TypeOf(t));
         switch (ParserInfo) {
-            .Optional => return t,
+            .optional => return t,
             else => return @as(?T, t),
         }
     }
@@ -141,13 +141,13 @@ fn parseBool(str: []const u8) !bool {
 fn enumAutocomplete(comptime parser: Parser, allocator: anytype, prefix: []const u8) anyerror!Autocompletions {
     const T = parser.type;
     const info = @typeInfo(T);
-    if (info != .Enum) {
+    if (info != .@"enum") {
         @compileError(std.parsermt.comptimePrint("Required enum, found {s}", .{@tagName(info)}));
     }
     var list = std.ArrayList(AutocompleteItem).init(allocator);
     defer list.deinit();
 
-    inline for (info.Enum.fields) |field| {
+    inline for (info.@"enum".fields) |field| {
         if (std.mem.startsWith(u8, field.name, prefix)) {
             try list.append(.{ .value = field.name });
         }
@@ -162,11 +162,11 @@ fn enumParse(comptime parser: Parser, allocator: anytype, recv: anytype, str: []
     _ = allocator;
     const T = parser.type;
     const info = @typeInfo(T);
-    if (info != .Enum) {
+    if (info != .@"enum") {
         @compileError(std.parsermt.comptimePrint("Required enum, found {s}", .{@tagName(info)}));
     }
     const rec = @as(*T, recv);
-    inline for (info.Enum.fields) |field| {
+    inline for (info.@"enum".fields) |field| {
         if (std.mem.eql(u8, field.name, str)) {
             const key = @as(T, @enumFromInt(field.value));
             rec.* = key;
@@ -179,7 +179,7 @@ fn enumParse(comptime parser: Parser, allocator: anytype, recv: anytype, str: []
 pub fn enumParser(comptime name: []const u8, comptime e: anytype, comptime help: ?[]const u8) Parser {
     const h = help orelse e: {
         var auto: []const u8 = "Possible values:";
-        for (@typeInfo(e).Enum.fields, 0..) |field, i| {
+        for (@typeInfo(e).@"enum".fields, 0..) |field, i| {
             auto = auto ++ if (i == 0) " " else ", ";
             auto = auto ++ @tagName(@as(e, @enumFromInt(field.value)));
         }
@@ -227,17 +227,17 @@ const JsonContext = struct {
 
     pub fn analyze(self: *JsonContext, comptime T: type) !void {
         switch (@typeInfo(T)) {
-            .Struct => |i| {
+            .@"struct" => |i| {
                 if (try self.registerType(T)) {
                     inline for (i.fields) |j| {
                         try self.analyze(j.type);
                     }
                 }
             },
-            .Vector => |i| try self.analyze(i.child),
-            .Pointer => |i| try self.analyze(i.child),
-            .Array => |i| try self.analyze(i.child),
-            .Optional => |i| try self.analyze(i.child),
+            .vector => |i| try self.analyze(i.child),
+            .pointer => |i| try self.analyze(i.child),
+            .array => |i| try self.analyze(i.child),
+            .optional => |i| try self.analyze(i.child),
             else => {},
         }
     }
@@ -268,19 +268,19 @@ const JsonContext = struct {
         const tab = "   ";
         var schema: []const u8 = "";
         switch (@typeInfo(T)) {
-            .Bool => {
+            .bool => {
                 return "\"true\" | \"false\"";
             },
-            .Float, .ComptimeFloat => {
+            .float, .comptime_float => {
                 return std.fmt.comptimePrint("float{d}", .{@sizeOf(T) * 8});
             },
-            .Int, .ComptimeInt => {
+            .int, .comptime_int => {
                 return std.fmt.comptimePrint("int{d}", .{@sizeOf(T) * 8});
             },
-            .Optional => |optionalInfo| {
+            .optional => |optionalInfo| {
                 return "null | " ++ try self.schemaText(prefix ++ tab, optionalInfo.child);
             },
-            .Enum => |e| {
+            .@"enum" => |e| {
                 schema = schema ++ "(";
                 for (e.fields, 0..) |field, i| {
                     schema = schema ++ if (i == 0) "" else " | ";
@@ -289,7 +289,7 @@ const JsonContext = struct {
                 schema = schema ++ ")";
                 return schema;
             },
-            .Union => |unionInfo| {
+            .@"union" => |unionInfo| {
                 if (unionInfo.tag_type == null) @compileError("Unable to parse into untagged union '" ++ @typeName(T) ++ "'");
                 schema = schema ++ std.fmt.comptimePrint("{s}(", .{typeName});
                 inline for (unionInfo.fields, 0..) |u_field, i| {
@@ -307,7 +307,7 @@ const JsonContext = struct {
                 return schema;
             },
 
-            .Struct => |structInfo| {
+            .@"struct" => |structInfo| {
                 schema = schema ++ std.fmt.comptimePrint("{s}{s}\n", .{ typeName, if (structInfo.is_tuple) "[" else "{" });
                 inline for (structInfo.fields, 0..) |field, i| {
                     if (i == 0) {
@@ -331,18 +331,18 @@ const JsonContext = struct {
                 return schema;
             },
 
-            .Vector, .Array => |item| {
+            .vector, .array => |item| {
                 schema = schema ++ std.fmt.comptimePrint("[", .{});
                 schema = schema ++ try self.schemaText(prefix ++ tab, item.child);
                 schema = schema ++ std.fmt.comptimePrint("]", .{});
                 return schema;
             },
-            .Pointer => |ptrInfo| {
+            .pointer => |ptrInfo| {
                 switch (ptrInfo.size) {
-                    .One => {
+                    .one => {
                         return self.schemaText(prefix ++ tab, ptrInfo.child);
                     },
-                    .Slice, .Many => {
+                    .slice, .many => {
                         schema = schema ++ std.fmt.comptimePrint("[", .{});
                         schema = schema ++ try self.schemaText(prefix ++ tab, ptrInfo.child);
                         schema = schema ++ std.fmt.comptimePrint("]", .{});

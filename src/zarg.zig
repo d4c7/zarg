@@ -336,7 +336,7 @@ pub fn Args(comptime clp: CommandLineParser) type {
         fields[i] = .{
             .name = param.fieldName(),
             .type = @TypeOf(default_value),
-            .default_value = @ptrCast(&default_value),
+            .default_value_ptr = @ptrCast(&default_value),
             .is_comptime = false,
             .alignment = @alignOf(@TypeOf(default_value)),
         };
@@ -346,21 +346,21 @@ pub fn Args(comptime clp: CommandLineParser) type {
             stats_fields[i] = .{
                 .name = param.fieldName(),
                 .type = @TypeOf(field_stats),
-                .default_value = @ptrCast(&field_stats),
+                .default_value_ptr = @ptrCast(&field_stats),
                 .is_comptime = false,
                 .alignment = @alignOf(@TypeOf(field_stats)),
             };
         }
     }
 
-    const T = @Type(.{ .Struct = .{
+    const T = @Type(.{ .@"struct" = .{
         .layout = .auto,
         .fields = fields[0..],
         .decls = &.{},
         .is_tuple = false,
     } });
 
-    const TStats = @Type(.{ .Struct = .{
+    const TStats = @Type(.{ .@"struct" = .{
         .layout = .auto,
         .fields = stats_fields[0..],
         .decls = &.{},
@@ -722,7 +722,7 @@ pub const CommandLineParser = struct {
             var namesMap = StringHashMap(usize, clp.params.len).init();
             var positionalMultiValueFound: bool = false;
             for (clp.params) |param1| {
-                if (try namesMap.put(param1.fieldName(), 0)) {
+                if (try namesMap.put(param1.fieldName(), 0)) |_| {
                     @compileError(std.fmt.comptimePrint("duplicated param name {s}", .{param1.fieldName()}));
                 }
 
