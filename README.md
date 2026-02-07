@@ -73,16 +73,16 @@ zig init
 
 ### Step 2: Fetch Zarg 
 
-Use `zig fetch` to fetch version `0.14.0` of the `zarg` package from the a repository, saves it to the `zig.mod` file, and makes it available for use in your Zig project.
+Use `zig fetch` to fetch version `0.15.2` of the `zarg` package from the a repository, saves it to the `zig.mod` file, and makes it available for use in your Zig project.
 
 ```bash
-$ zig fetch --save git+https://github.com/d4c7/zarg#0.14.0
+$ zig fetch --save git+https://github.com/d4c7/zarg#0.15.2
 ```
 
 or 
 
 ```bash
-$ zig fetch --save git+https://codeberg.org/d4c7/zarg#0.14.0
+$ zig fetch --save git+https://codeberg.org/d4c7/zarg#0.15.2
 ```
 
 ### Step 3: Add Zarg As a Module
