@@ -61,7 +61,7 @@ fn parseFull(
 ) !void {
     const parser = zarg.CommandLineParser.init(.{ .params = opts, .opts = cfg });
     var it = TestIterator.init(args);
-    const s = parser.parse(&it, std.testing.allocator, .{});
+    var s = parser.parse(&it, std.testing.allocator, .{});
     defer s.deinit();
     if (s.hasProblems()) {
         return s.problems.items[0].err;

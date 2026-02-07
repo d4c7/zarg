@@ -144,17 +144,17 @@ fn enumAutocomplete(comptime parser: Parser, allocator: anytype, prefix: []const
     if (info != .@"enum") {
         @compileError(std.parsermt.comptimePrint("Required enum, found {s}", .{@tagName(info)}));
     }
-    var list = std.ArrayList(AutocompleteItem).init(allocator);
-    defer list.deinit();
+    var list = std.ArrayList(AutocompleteItem).empty;
+    defer list.deinit(allocator);
 
     inline for (info.@"enum".fields) |field| {
         if (std.mem.startsWith(u8, field.name, prefix)) {
-            try list.append(.{ .value = field.name });
+            try list.append(allocator, .{ .value = field.name });
         }
     }
     return .{
         .allocator = allocator,
-        .items = try list.toOwnedSlice(),
+        .items = try list.toOwnedSlice(allocator),
     };
 }
 

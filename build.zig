@@ -13,9 +13,11 @@ pub fn build(b: *std.Build) void {
 
     // tests
     const unit_tests = b.addTest(.{
-        .root_source_file = b.path("src/tests.zig"),
-        .target = target,
-        .optimize = optimize,
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src/tests.zig"),
+            .target = target,
+            .optimize = optimize,
+        }),
     });
 
     const run_unit_tests = b.addRunArtifact(unit_tests);
@@ -24,11 +26,7 @@ pub fn build(b: *std.Build) void {
     test_step.dependOn(&run_unit_tests.step);
 
     // zarg module
-    const zargModule = b.addModule("zarg", .{
-        .root_source_file = b.path("src/zarg.zig"),
-        .target = target,
-        .optimize = optimize,
-    });
+    const zargModule = b.addModule("zarg", .{ .root_source_file = b.path("src/zarg.zig"), .target = target, .optimize = optimize });
 
     // zarg examples
     const examples_step = b.step("examples", "Build examples");
@@ -44,9 +42,11 @@ pub fn build(b: *std.Build) void {
     }) |exe_name| {
         const exe = b.addExecutable(.{
             .name = exe_name,
-            .root_source_file = b.path(b.fmt("examples/{s}.zig", .{exe_name})),
-            .target = target,
-            .optimize = optimize,
+            .root_module = b.createModule(.{
+                .root_source_file = b.path(b.fmt("examples/{s}.zig", .{exe_name})),
+                .target = target,
+                .optimize = optimize,
+            }),
         });
         const install_exe = b.addInstallArtifact(exe, .{});
         exe.root_module.addImport("zarg", zargModule);
@@ -58,11 +58,11 @@ pub fn build(b: *std.Build) void {
     const binPath = b.pathJoin(&.{ b.install_path, "bin" });
     std.fs.cwd().makePath(binPath) catch std.process.exit(1);
     const coverExePath = b.pathJoin(&.{ binPath, "cover-test" });
-    const mk_cover = b.addSystemCommand(&.{ "zig", "test", "--test-no-exec", b.fmt("-femit-bin={s}", .{coverExePath}), "src/tests.zig" });
+    const mk_cover = b.addSystemCommand(&.{ "zig", "test", "-g", "--test-no-exec", "-ODebug", b.fmt("-femit-bin={s}", .{coverExePath}), "src/tests.zig" });
     const run_cover = b.addSystemCommand(&.{
         "kcov",
         "--clean",
-        "--include-pattern=src/",
+        "--include-pattern=src",
         b.pathJoin(&.{ b.install_path, "coverture-report" }),
         coverExePath,
     });

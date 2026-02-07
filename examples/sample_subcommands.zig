@@ -68,26 +68,34 @@ pub fn main() !void {
     var s = clp.parse(&args, allocator, .{});
     defer s.deinit();
 
+    var stderr_buffer: [1024]u8 = undefined;
+    var stderr_writer = std.fs.File.stderr().writer(&stderr_buffer);
+    const stderr = &stderr_writer.interface;
+
     if (s.helpRequested()) {
-        try s.printHelp(std.io.getStdErr().writer());
+        try s.printHelp(stderr);
+        try stderr.flush();
         return;
     }
     if (s.hasProblems()) {
-        try s.printProblems(std.io.getStdErr().writer(), .all_problems);
+        try s.printProblems(stderr, .all_problems);
+        try stderr.flush();
         return;
     }
 
     if (s.arg.command) |p| {
         switch (p) {
             .command1 => {
-                var cmd1 = command1_clp.parse(&args, allocator, .{ .exe = s.exe, .argOffset = s.lastArgIndex+1 });
+                var cmd1 = command1_clp.parse(&args, allocator, .{ .exe = s.exe, .argOffset = s.lastArgIndex + 1 });
                 defer cmd1.deinit();
                 if (cmd1.helpRequested()) {
-                    try cmd1.printHelp(std.io.getStdErr().writer());
+                    try cmd1.printHelp(stderr);
+                    try stderr.flush();
                     return;
                 }
                 if (cmd1.hasProblems()) {
-                    try cmd1.printProblems(std.io.getStdErr().writer(), .all_problems);
+                    try cmd1.printProblems(stderr, .all_problems);
+                    try stderr.flush();
                     return;
                 }
             },

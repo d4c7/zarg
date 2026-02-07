@@ -16,6 +16,7 @@ pub const ComptimeHelp = struct {
 
     fn comptimeLines(comptime fmt: []const u8, comptime first: anytype, comptime next: anytype, comptime multiline: []const u8) []const u8 {
         comptime {
+            @setEvalBranchQuota(30000); //TODO: REVIEW: this
             var res: []const u8 = "";
             var it = std.mem.splitSequence(u8, multiline, "\n");
             if (it.next()) |line| {

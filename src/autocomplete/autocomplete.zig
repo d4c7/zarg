@@ -38,8 +38,8 @@ pub const Args = struct {
 };
 
 pub fn parseCommandLine(input: []const u8, cursor: usize, allocator: std.mem.Allocator) !Args {
-    var tokens = std.ArrayList([]const u8).init(allocator);
-    defer tokens.deinit();
+    var tokens = std.ArrayList([]const u8).empty;
+    defer tokens.deinit(allocator);
     const optionArgSeparator = "=";
 
     var found = false;
@@ -56,8 +56,8 @@ pub fn parseCommandLine(input: []const u8, cursor: usize, allocator: std.mem.All
         var escape = false;
         var in_single_quotes = false;
 
-        var token_buffer = std.ArrayList(u8).init(allocator);
-        defer token_buffer.deinit();
+        var token_buffer = std.ArrayList(u8).empty;
+        defer token_buffer.deinit(allocator);
         var offset: usize = 0;
         const start = i;
         while (i < input.len) {
@@ -69,7 +69,7 @@ pub fn parseCommandLine(input: []const u8, cursor: usize, allocator: std.mem.All
             const c = input[i];
             if (escape) {
                 escape = false;
-                try token_buffer.append(c);
+                try token_buffer.append(allocator, c);
                 i += 1;
                 continue;
             }
@@ -103,19 +103,19 @@ pub fn parseCommandLine(input: []const u8, cursor: usize, allocator: std.mem.All
                     break;
                 }
             }
-            try token_buffer.append(c);
+            try token_buffer.append(allocator, c);
             i += 1;
         }
         const tbil = token_buffer.items.len;
 
         if (tbil > 0) {
-            try tokens.append(try token_buffer.toOwnedSlice());
+            try tokens.append(allocator, try token_buffer.toOwnedSlice(allocator));
         }
     }
     if (!found) {
         found = true;
         if (tokens.items.len == 0 or std.mem.endsWith(u8, input, optionArgSeparator) or (input.len > 0 and std.ascii.isWhitespace(input[input.len - 1]))) {
-            try tokens.append("");
+            try tokens.append(allocator, "");
             word_idx = tokens.items.len - 1;
             word_pos = 0;
         } else {
@@ -123,7 +123,7 @@ pub fn parseCommandLine(input: []const u8, cursor: usize, allocator: std.mem.All
             word_pos = tokens.items[word_idx].len;
         }
     }
-    const t = try tokens.toOwnedSlice();
+    const t = try tokens.toOwnedSlice(allocator);
     return .{ .tokens = t, .word_idx = word_idx, .word_pos = word_pos };
 }
 
@@ -215,12 +215,18 @@ fn command_install(args0: anytype, exe: []const u8, allocator: std.mem.Allocator
     var s = clp.parse(args0, allocator, .{ .exe = exe, .argOffset = 1 });
     defer s.deinit();
 
+    var stderr_buffer: [1024]u8 = undefined;
+    var stderr_writer = std.fs.File.stderr().writer(&stderr_buffer);
+    const stderr = &stderr_writer.interface;
+
     if (s.helpRequested()) {
-        try s.printHelp(std.io.getStdErr().writer());
+        try s.printHelp(stderr);
+        try stderr.flush();
         return;
     }
     if (s.hasProblems()) {
-        try s.printProblems(std.io.getStdErr().writer(), .all_problems);
+        try s.printProblems(stderr, .all_problems);
+        try stderr.flush();
         return;
     }
 
@@ -232,7 +238,11 @@ fn command_install(args0: anytype, exe: []const u8, allocator: std.mem.Allocator
             try map.put("TARGET", if (s.arg.target) |t| t else exe);
             try map.put("AUTOCOMPLETER", exe);
 
-            try replaceAndWrite(bash_autocomplete, map, std.io.getStdOut().writer());
+            var stdout_buffer: [1024]u8 = undefined;
+            var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+            const stdout = &stdout_writer.interface;
+            try replaceAndWrite(bash_autocomplete, map, stdout);
+            try stdout.flush();
         },
         .zsh => {
             std.debug.print("TO DO", .{});
@@ -267,12 +277,18 @@ fn command_suggest(args0: anytype, allocator: std.mem.Allocator, _: usize, clp_t
     var s = aclp.parse(args0, allocator, .{ .exe = "exe + cmd", .argOffset = 1 });
     defer s.deinit();
 
+    var stderr_buffer: [1024]u8 = undefined;
+    var stderr_writer = std.fs.File.stderr().writer(&stderr_buffer);
+    const stderr = &stderr_writer.interface;
+
     if (s.helpRequested()) {
-        try s.printHelp(std.io.getStdErr().writer());
+        try s.printHelp(stderr);
+        try stderr.flush();
         return;
     }
     if (s.hasProblems()) {
-        try s.printProblems(std.io.getStdErr().writer(), .all_problems);
+        try s.printProblems(stderr, .all_problems);
+        try stderr.flush();
         return;
     }
 
@@ -292,7 +308,9 @@ fn command_suggest(args0: anytype, allocator: std.mem.Allocator, _: usize, clp_t
     const prx = arg[0..args.word_pos];
     const arl = arg.len;
 
-    var out = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const out = &stdout_writer.interface;
     if (arl > 0 and arg[0] == '-') {
         if (arl > 1 and arg[1] == '-') {
             //suggest long options
@@ -396,6 +414,7 @@ fn command_suggest(args0: anytype, allocator: std.mem.Allocator, _: usize, clp_t
             }
         }
     }
+    try out.flush();
 }
 
 pub fn outParamAutocomplete(parser: zarg.Parsers.Parser, allocator: std.mem.Allocator, prx: []const u8, out: anytype) !void {
@@ -439,12 +458,18 @@ pub fn __main(clp_target: zarg.CommandLineParser, allocator: std.mem.Allocator) 
     var s = clp.parse(&args, allocator, .{});
     defer s.deinit();
 
+    var stderr_buffer: [1024]u8 = undefined;
+    var stderr_writer = std.fs.File.stderr().writer(&stderr_buffer);
+    const stderr = &stderr_writer.interface;
+
     if (s.helpRequested()) {
-        try s.printHelp(std.io.getStdErr().writer());
+        try s.printHelp(stderr);
+        try stderr.flush();
         return;
     }
     if (s.hasProblems()) {
-        try s.printProblems(std.io.getStdErr().writer(), .all_problems);
+        try s.printProblems(stderr, .all_problems);
+        try stderr.flush();
         return;
     }
 

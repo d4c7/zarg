@@ -26,13 +26,19 @@ pub fn main() !void {
     var s = clp.parseArgs(allocator);
     defer s.deinit();
 
+    var stderr_buffer: [1024]u8 = undefined;
+    var stderr_writer = std.fs.File.stderr().writer(&stderr_buffer);
+    const stderr = &stderr_writer.interface;
+
     if (s.helpRequested()) {
-        try s.printHelp(std.io.getStdErr().writer());
+        try s.printHelp(stderr);
+        try stderr.flush();
         return;
     }
 
     if (s.hasProblems()) {
-        try s.printProblems(std.io.getStdErr().writer(), .all_problems);
+        try s.printProblems(stderr, .all_problems);
+        try stderr.flush();
         return;
     }
 

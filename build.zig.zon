@@ -1,8 +1,8 @@
 .{
     .name = .zarg,
-    .fingerprint = 0xa20cd17cdb6f5f36,
-    .version = "0.0.1",
-    .minimum_zig_version = "0.14.0",
+    .fingerprint = 0xa20cd17cdb6f5f37,
+    .version = "0.15.2",
+    .minimum_zig_version = "0.15.2",
     .paths = .{
         "build.zig",
         "build.zig.zon",

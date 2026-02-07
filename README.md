@@ -7,7 +7,7 @@ This file is part of zarg project (https://github.com/d4c7/zarg)
 
 zarg (former zig-argueando) is a minimalist and efficient command-line parsing library written in Zig. It is designed to offer a convenient way of parsing command-line arguments in a simple yet powerful manner. With zarg, you can easily set options, flags, and positional arguments for your command-line applications.
 
-Version 0.0.1 for zig 0.14.0
+Version 0.0.1 for zig 0.15.2
 
 ```
 WARNING: THIS IS A WORK IN PROGRESS, YOU SHOULD EXPECT BREAKING CHANGES AND BUGS
@@ -43,7 +43,7 @@ WARNING: THIS IS A WORK IN PROGRESS, YOU SHOULD EXPECT BREAKING CHANGES AND BUGS
 To use zarg in your project, you need to add the dependency to your `build.zig.zon`:
 
 ```bash
-$ zig fetch --save git+https://github.com/d4c7/zarg#0.14.0
+$ zig fetch --save git+https://github.com/d4c7/zarg#0.15.2
 ```
 
 Then you could add the module to to your `build.zig` file:
@@ -123,13 +123,19 @@ and add the arguments parsing code just after at the beggining of the main funct
     var s = clp.parseArgs(allocator);
     defer s.deinit();
 
+    var stderr_buffer: [1024]u8 = undefined;
+    var stderr_writer = std.fs.File.stderr().writer(&stderr_buffer);
+    const stderr = &stderr_writer.interface;
+
     if (s.helpRequested()) {
-        try s.printHelp(std.io.getStdErr().writer());
+        try s.printHelp(stderr);
+        try stderr.flush()
         return;
     }
 
     if (s.hasProblems()) {
-        try s.printProblems(std.io.getStdErr().writer(), .all_problems);
+        try s.printProblems(stderr, .all_problems);
+        try stderr.flush()
         return;
     }
 
@@ -188,13 +194,19 @@ Then, in your `main` function, use the `parse` function to parse the command-lin
 var s = clp.parseArgs(allocator);
 defer s.deinit();
 
+var stderr_buffer: [1024]u8 = undefined;
+var stderr_writer = std.fs.File.stderr().writer(&stderr_buffer);
+const stderr = &stderr_writer.interface;
+
 if (s.helpRequested()) {
-    try s.printHelp(std.io.getStdErr().writer());
+    try s.printHelp(stderr);
+    try stderr.flush()
     return;
 }
 
 if (s.hasProblems()) {
-    try s.printProblems(std.io.getStdErr().writer(), .all_problems);
+    try s.printProblems(stderr, .all_problems);
+    try stderr.flush()
     return;
 }
 
@@ -274,10 +286,12 @@ zig build cover
 
 View the report 
 ```
-firefox zig-out/coverture/index.html
+firefox zig-out/coverture-report/index.html
 ```
 
 Note: Since the Zig compiler exclusively compiles functions that are explicitly called or referenced and comptime can lead to substantial portions of code not being included in the runtime the coverage results only reflect the extent to which the utilized functions are covered. 
+
+NOTE: not working for this zig version
 
 ## Autocomplete
 

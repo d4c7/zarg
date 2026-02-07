@@ -377,7 +377,7 @@ pub fn Args(comptime clp: CommandLineParser) type {
         lastArgIndex: usize = 0,
         const Self = @This();
 
-        pub fn deinit(self: Self) void {
+        pub fn deinit(self: *Self) void {
             inline for (clp.params) |param| {
                 const knd = switch (param.kind) {
                     .option => |o| o.format,
@@ -391,12 +391,12 @@ pub fn Args(comptime clp: CommandLineParser) type {
                         parser.free(self.allocator, @field(&self.arg, param.fieldName()));
                     },
                     .multi => |m| {
-                        const list = @field(&self.arg, param.fieldName());
+                        var list = @field(&self.arg, param.fieldName());
                         const parser = comptime Parsers.select(m.parser, clp.parsers);
                         if (parser.useAllocator())
                             for (list.items) |i|
                                 parser.free(self.allocator, i);
-                        list.deinit();
+                        list.deinit(self.allocator);
                     },
                 }
             }
@@ -404,7 +404,7 @@ pub fn Args(comptime clp: CommandLineParser) type {
                 if (p.details.len > 0)
                     self.allocator.free(p.details);
 
-            self.problems.deinit();
+            self.problems.deinit(self.allocator);
         }
 
         pub fn hasProblems(self: Self) bool {
@@ -435,7 +435,7 @@ pub fn Args(comptime clp: CommandLineParser) type {
                     return;
                 }
             }
-            self.problems.append(p1) catch |appendError| {
+            self.problems.append(self.allocator, p1) catch |appendError| {
                 std.debug.print("Unable to append problem: {}", .{appendError});
             };
         }
@@ -580,7 +580,7 @@ pub fn Args(comptime clp: CommandLineParser) type {
                                     // pzig bug?:
                                     //list = @field(topts, field_name);
                                     //TODO: sec? append iif (list.items.len < fmt..max)
-                                    @field(topts, field_name).append(value_receiver) catch |err| {
+                                    @field(topts, field_name).append(t.allocator, value_receiver) catch |err| {
                                         t.report(err, "Unable to append value '{s}' of type {s} to option '{s}'", .{ value, parserId, optionName }, qvalue);
                                         parser.free(t.allocator, value_receiver);
                                         return .applied_with_errors;
@@ -651,7 +651,7 @@ pub fn Args(comptime clp: CommandLineParser) type {
                             }
 
                             if (pos.format == .multi) {
-                                @field(topts, pos.name).append(value_receiver) catch |err| {
+                                @field(topts, pos.name).append(t.allocator, value_receiver) catch |err| {
                                     parser.free(t.allocator, value_receiver);
                                     t.report(err, "Unable to append value '{s}' of type {s} to positionals: {s}", .{ value, parserId, @errorName(err) }, qarg);
                                     return .applied_with_errors;
@@ -798,7 +798,7 @@ pub const CommandLineParser = struct {
 
         var t = Args(self){
             .allocator = allocator,
-            .problems = std.ArrayList(Problem).init(allocator),
+            .problems = .empty,
         };
 
         //init param things like lists for multi optional args
@@ -811,7 +811,7 @@ pub const CommandLineParser = struct {
             switch (knd) {
                 .multi => |m| {
                     const parser = comptime Parsers.select(m.parser, self.parsers);
-                    @field(&t.arg, param.fieldName()) = std.ArrayList(parser.type).init(allocator);
+                    @field(&t.arg, param.fieldName()) = std.ArrayList(parser.type).empty;
                 },
                 else => {},
             }
@@ -941,7 +941,7 @@ pub const CommandLineParser = struct {
                                     continue;
                                 };
                             }
-                            @field(&t.arg, name).append(receiver) catch |err| {
+                            @field(&t.arg, name).append(t.allocator, receiver) catch |err| {
                                 parser.free(t.allocator, receiver);
                                 t.addProblem(err, "Unable to append value #{d} '{s}' of type {s} for '{s}': {s}", .{ idx, def, m.parser, comptime ComptimeHelp.argSpec(param), @errorName(err) });
                             };
